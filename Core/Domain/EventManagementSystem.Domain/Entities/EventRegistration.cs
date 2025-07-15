@@ -1,8 +1,12 @@
-﻿using EventManagementSystem.Domain.Common;
-using EventManagementSystem.Domain.ValueObjects;
+﻿// <copyright file="EventRegistration.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
 
 namespace EventManagementSystem.Domain.Entities
 {
+    using EventManagementSystem.Domain.Common;
+    using EventManagementSystem.Domain.ValueObjects;
+
     public class EventRegistration : BaseEntity, IAggregateRoot
     {
         // Private Constructor for EF Core
@@ -48,7 +52,7 @@ namespace EventManagementSystem.Domain.Entities
                 UserId = userId,
                 RegisteredAt = DateTime.UtcNow,
                 Status = RegistrationStatus.Registered,
-                Notes = notes?.Trim()
+                Notes = notes?.Trim(),
             };
 
             // Raise domain event
@@ -76,7 +80,7 @@ namespace EventManagementSystem.Domain.Entities
                 RegisteredAt = registeredAt,
                 CancelledAt = cancelledAt,
                 Status = RegistrationStatus.Create(status),
-                Notes = notes
+                Notes = notes,
             };
 
             // Set base entity properties
@@ -89,69 +93,83 @@ namespace EventManagementSystem.Domain.Entities
         // Business Methods
         public void Cancel(string? reason = null)
         {
-            if (IsCancelled)
+            if (this.IsCancelled)
+            {
                 throw new InvalidOperationException("Registration is already cancelled");
+            }
 
-            if (Status == RegistrationStatus.Attended)
+            if (this.Status == RegistrationStatus.Attended)
+            {
                 throw new InvalidOperationException("Cannot cancel registration after attending event");
+            }
 
-            CancelledAt = DateTime.UtcNow;
-            Status = RegistrationStatus.Cancelled;
+            this.CancelledAt = DateTime.UtcNow;
+            this.Status = RegistrationStatus.Cancelled;
 
             if (!string.IsNullOrWhiteSpace(reason))
             {
-                Notes = string.IsNullOrWhiteSpace(Notes)
+                this.Notes = string.IsNullOrWhiteSpace(this.Notes)
                     ? $"Cancelled: {reason}"
-                    : $"{Notes}; Cancelled: {reason}";
+                    : $"{this.Notes}; Cancelled: {reason}";
             }
 
-            MarkAsUpdated();
+            this.MarkAsUpdated();
 
             AddDomainEvent(new RegistrationCancelledEvent(
-                RegistrationId, EventId, UserId, CancelledAt.Value, reason));
+                this.RegistrationId, this.EventId, this.UserId, this.CancelledAt.Value, reason));
         }
 
         public void MarkAsAttended()
         {
-            if (IsCancelled)
+            if (this.IsCancelled)
+            {
                 throw new InvalidOperationException("Cannot mark cancelled registration as attended");
+            }
 
-            if (Status == RegistrationStatus.Attended)
+            if (this.Status == RegistrationStatus.Attended)
+            {
                 return; // Already attended
+            }
 
-            Status = RegistrationStatus.Attended;
-            MarkAsUpdated();
+            this.Status = RegistrationStatus.Attended;
+            this.MarkAsUpdated();
 
             AddDomainEvent(new RegistrationAttendedEvent(
-                RegistrationId, EventId, UserId, DateTime.UtcNow));
+                this.RegistrationId, this.EventId, this.UserId, DateTime.UtcNow));
         }
 
         public void MarkAsNoShow()
         {
-            if (IsCancelled)
+            if (this.IsCancelled)
+            {
                 throw new InvalidOperationException("Cannot mark cancelled registration as no-show");
+            }
 
-            if (Status == RegistrationStatus.Attended)
+            if (this.Status == RegistrationStatus.Attended)
+            {
                 throw new InvalidOperationException("Cannot mark attended registration as no-show");
+            }
 
-            Status = RegistrationStatus.NoShow;
-            MarkAsUpdated();
+            this.Status = RegistrationStatus.NoShow;
+            this.MarkAsUpdated();
 
             AddDomainEvent(new RegistrationNoShowEvent(
-                RegistrationId, EventId, UserId, DateTime.UtcNow));
+                this.RegistrationId, this.EventId, this.UserId, DateTime.UtcNow));
         }
 
         public void AddNotes(string notes)
         {
             if (string.IsNullOrWhiteSpace(notes))
+            {
                 return;
+            }
 
             var trimmedNotes = notes.Trim();
-            Notes = string.IsNullOrWhiteSpace(Notes)
+            this.Notes = string.IsNullOrWhiteSpace(this.Notes)
                 ? trimmedNotes
-                : $"{Notes}; {trimmedNotes}";
+                : $"{this.Notes}; {trimmedNotes}";
 
-            MarkAsUpdated();
+            this.MarkAsUpdated();
         }
     }
 }

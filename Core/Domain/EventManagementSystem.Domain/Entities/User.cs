@@ -87,7 +87,7 @@ namespace EventManagementSystem.Domain.Entities
             // Raise domain event if name changed
             if (oldFullName != this.FullName)
             {
-                AddDomainEvent(new UserProfileUpdatedEvent(this.UserId, this.Email, this.FullName, oldFullName));
+                this.AddDomainEvent(new UserProfileUpdatedEvent(this.UserId, this.Email, this.FullName, oldFullName));
             }
         }
 
@@ -97,7 +97,7 @@ namespace EventManagementSystem.Domain.Entities
             this.Email = Email.Create(newEmail);
             this.MarkAsUpdated();
 
-            AddDomainEvent(new UserEmailUpdatedEvent(this.UserId, oldEmail, this.Email));
+            this.AddDomainEvent(new UserEmailUpdatedEvent(this.UserId, oldEmail, this.Email));
         }
 
         public bool CanRegisterForEvent(Event eventToRegister)
