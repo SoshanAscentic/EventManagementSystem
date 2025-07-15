@@ -5,6 +5,7 @@
 namespace EventManagementSystem.Domain.Entities
 {
     using EventManagementSystem.Domain.Common;
+    using EventManagementSystem.Domain.Events.Registration;
     using EventManagementSystem.Domain.Events.User;
     using EventManagementSystem.Domain.ValueObjects;
 

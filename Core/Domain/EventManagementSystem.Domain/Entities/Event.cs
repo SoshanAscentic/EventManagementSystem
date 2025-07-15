@@ -5,6 +5,7 @@
 namespace EventManagementSystem.Domain.Entities
 {
     using EventManagementSystem.Domain.Common;
+    using EventManagementSystem.Domain.Events.Event;
     using EventManagementSystem.Domain.ValueObjects;
 
     public class Event : BaseEntity, IAggregateRoot
