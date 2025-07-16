@@ -2,22 +2,26 @@
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 
-using EventManagementSystem.Domain.Common;
-using EventManagementSystem.Domain.Entities;
-using EventManagementSystem.Domain.ValueObjects;
-
 namespace EventManagementSystem.Domain
 {
+    using EventManagementSystem.Domain.Common;
+    using EventManagementSystem.Domain.Entities;
+    using EventManagementSystem.Domain.ValueObjects;
+
     public interface IUserRepository : IGenericRepository<User>
     {
         // User-specific query operations
         Task<User?> GetByIdAsync(UserId id, CancellationToken cancellationToken = default);
+
         Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default);
+
         Task<bool> ExistsAsync(UserId id, CancellationToken cancellationToken = default);
+
         Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default);
 
         // User search and filtering
         Task<IReadOnlyList<User>> GetByNameAsync(string searchTerm, CancellationToken cancellationToken = default);
+
         Task<(IReadOnlyList<User> Users, int TotalCount)> SearchUsersAsync(
             string? searchTerm = null,
             int pageNumber = 1,
@@ -26,7 +30,9 @@ namespace EventManagementSystem.Domain
 
         // User activity queries
         Task<IReadOnlyList<User>> GetUsersWithActiveRegistrationsAsync(CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<User>> GetUsersRegisteredForEventAsync(EventId eventId, CancellationToken cancellationToken = default);
+
         Task<int> GetActiveUsersCountAsync(DateTime fromDate, CancellationToken cancellationToken = default);
 
         // User registration statistics

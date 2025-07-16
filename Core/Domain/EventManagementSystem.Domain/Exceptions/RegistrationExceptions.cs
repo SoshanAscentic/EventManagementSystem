@@ -9,8 +9,6 @@ namespace EventManagementSystem.Domain.Exceptions
 
     public sealed class RegistrationNotFoundException : DomainException
     {
-        public RegistrationId RegistrationId { get; }
-
         public RegistrationNotFoundException(RegistrationId registrationId)
             : base("Registration.NotFound", $"Registration with ID {registrationId.Value} was not found.")
         {
@@ -21,14 +19,12 @@ namespace EventManagementSystem.Domain.Exceptions
             : this(RegistrationId.Create(registrationId))
         {
         }
+
+        public RegistrationId RegistrationId { get; }
     }
 
     public sealed class InvalidRegistrationException : DomainException
     {
-        public UserId UserId { get; }
-
-        public EventId EventId { get; }
-
         public InvalidRegistrationException(UserId userId, EventId eventId, string reason)
             : base(
                 "Registration.Invalid",
@@ -37,14 +33,14 @@ namespace EventManagementSystem.Domain.Exceptions
             this.UserId = userId;
             this.EventId = eventId;
         }
+
+        public UserId UserId { get; }
+
+        public EventId EventId { get; }
     }
 
     public sealed class DuplicateRegistrationException : DomainException
     {
-        public UserId UserId { get; }
-
-        public EventId EventId { get; }
-
         public DuplicateRegistrationException(UserId userId, EventId eventId)
             : base(
                 "Registration.Duplicate",
@@ -53,14 +49,14 @@ namespace EventManagementSystem.Domain.Exceptions
             this.UserId = userId;
             this.EventId = eventId;
         }
+
+        public UserId UserId { get; }
+
+        public EventId EventId { get; }
     }
 
     public sealed class RegistrationCancellationNotAllowedException : DomainException
     {
-        public RegistrationId RegistrationId { get; }
-
-        public string Reason { get; }
-
         public RegistrationCancellationNotAllowedException(RegistrationId registrationId, string reason)
             : base(
                 "Registration.CancellationNotAllowed",
@@ -69,14 +65,14 @@ namespace EventManagementSystem.Domain.Exceptions
             this.RegistrationId = registrationId;
             this.Reason = reason;
         }
+
+        public RegistrationId RegistrationId { get; }
+
+        public string Reason { get; }
     }
 
     public sealed class RegistrationAlreadyCancelledException : DomainException
     {
-        public RegistrationId RegistrationId { get; }
-
-        public DateTime CancelledAt { get; }
-
         public RegistrationAlreadyCancelledException(RegistrationId registrationId, DateTime cancelledAt)
             : base(
                 "Registration.AlreadyCancelled",
@@ -85,14 +81,14 @@ namespace EventManagementSystem.Domain.Exceptions
             this.RegistrationId = registrationId;
             this.CancelledAt = cancelledAt;
         }
+
+        public RegistrationId RegistrationId { get; }
+
+        public DateTime CancelledAt { get; }
     }
 
     public sealed class RegistrationDeadlinePassedException : DomainException
     {
-        public EventId EventId { get; }
-
-        public DateTime Deadline { get; }
-
         public RegistrationDeadlinePassedException(EventId eventId, DateTime deadline, string operation)
             : base(
                 "Registration.DeadlinePassed",
@@ -101,5 +97,9 @@ namespace EventManagementSystem.Domain.Exceptions
             this.EventId = eventId;
             this.Deadline = deadline;
         }
+
+        public EventId EventId { get; }
+
+        public DateTime Deadline { get; }
     }
 }
