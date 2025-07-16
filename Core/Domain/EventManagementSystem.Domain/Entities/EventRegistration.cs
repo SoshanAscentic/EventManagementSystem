@@ -116,7 +116,7 @@ namespace EventManagementSystem.Domain.Entities
 
             this.MarkAsUpdated();
 
-            AddDomainEvent(new RegistrationCancelledEvent(
+            this.AddDomainEvent(new RegistrationCancelledEvent(
                 this.RegistrationId, this.EventId, this.UserId, this.CancelledAt.Value, reason));
         }
 
@@ -135,7 +135,7 @@ namespace EventManagementSystem.Domain.Entities
             this.Status = RegistrationStatus.Attended;
             this.MarkAsUpdated();
 
-            AddDomainEvent(new RegistrationAttendedEvent(
+            this.AddDomainEvent(new RegistrationAttendedEvent(
                 this.RegistrationId, this.EventId, this.UserId, DateTime.UtcNow));
         }
 
@@ -154,7 +154,7 @@ namespace EventManagementSystem.Domain.Entities
             this.Status = RegistrationStatus.NoShow;
             this.MarkAsUpdated();
 
-            AddDomainEvent(new RegistrationNoShowEvent(
+            this.AddDomainEvent(new RegistrationNoShowEvent(
                 this.RegistrationId, this.EventId, this.UserId, DateTime.UtcNow));
         }
 

@@ -179,7 +179,7 @@ namespace EventManagementSystem.Domain.Entities
 
             this.MarkAsUpdated();
 
-            AddDomainEvent(new EventUpdatedEvent(this.EventId, oldTitle, this.Title, oldDateTime.StartDateTime, this.EventDateTime.StartDateTime));
+            this.AddDomainEvent(new EventUpdatedEvent(this.EventId, oldTitle, this.Title, oldDateTime.StartDateTime, this.EventDateTime.StartDateTime));
         }
 
         public void UpdateCapacity(int newCapacity)
@@ -194,7 +194,7 @@ namespace EventManagementSystem.Domain.Entities
             this.Capacity = EventCapacity.Create(newCapacity);
             this.MarkAsUpdated();
 
-            AddDomainEvent(new EventCapacityUpdatedEvent(this.EventId, oldCapacity.Value, newCapacity));
+            this.AddDomainEvent(new EventCapacityUpdatedEvent(this.EventId, oldCapacity.Value, newCapacity));
         }
 
         public EventRegistration RegisterUser(UserId userId)
@@ -222,7 +222,7 @@ namespace EventManagementSystem.Domain.Entities
             // Check if event is now full
             if (this.IsFull)
             {
-                AddDomainEvent(new EventCapacityReachedEvent(this.EventId, this.Title, this.Capacity.Value));
+                this.AddDomainEvent(new EventCapacityReachedEvent(this.EventId, this.Title, this.Capacity.Value));
             }
 
             return registration;
@@ -258,7 +258,7 @@ namespace EventManagementSystem.Domain.Entities
             var image = EventImage.Create(this.EventId, fileName, filePath, fileSize, isPrimary);
             this.images.Add(image);
 
-            AddDomainEvent(new EventImageAddedEvent(this.EventId, image.Id, fileName, isPrimary));
+            this.AddDomainEvent(new EventImageAddedEvent(this.EventId, image.Id, fileName, isPrimary));
 
             return image;
         }
@@ -292,7 +292,7 @@ namespace EventManagementSystem.Domain.Entities
             this.images.Remove(image);
             this.MarkAsUpdated();
 
-            AddDomainEvent(new EventImageRemovedEvent(this.EventId, imageId, image.FileName));
+            this.AddDomainEvent(new EventImageRemovedEvent(this.EventId, imageId, image.FileName));
         }
 
         private static string ValidateTitle(string title)

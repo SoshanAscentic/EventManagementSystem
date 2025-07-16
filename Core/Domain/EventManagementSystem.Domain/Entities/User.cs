@@ -134,7 +134,7 @@ namespace EventManagementSystem.Domain.Entities
             var registration = EventRegistration.Create(eventToRegister.EventId, this.UserId);
             this.registrations.Add(registration);
 
-            AddDomainEvent(new UserRegisteredForEventEvent(
+            this.AddDomainEvent(new UserRegisteredForEventEvent(
                 this.UserId, eventToRegister.EventId, registration.RegistrationId, DateTime.UtcNow));
 
             return registration;
@@ -152,7 +152,7 @@ namespace EventManagementSystem.Domain.Entities
 
             registration.Cancel();
 
-            AddDomainEvent(new UserCancelledRegistrationEvent(
+            this.AddDomainEvent(new UserCancelledRegistrationEvent(
                 this.UserId, eventId, registration.RegistrationId, DateTime.UtcNow));
         }
 
