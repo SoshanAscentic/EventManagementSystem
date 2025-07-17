@@ -1,14 +1,16 @@
-﻿// <copyright file="CreateEventCommand.cs" company="Ascentic">
+﻿// <copyright file="UpdateEventCommand.cs" company="Ascentic">
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 
-namespace EventManagementSystem.Application.Usecases.CreateEvent
+namespace EventManagementSystem.Application.Usecases.Commands.UpdateEvent
 {
     using EventManagementSystem.Application.Common.Models;
     using MediatR;
 
-    public class CreateEventCommand : IRequest<Result<int>>
+    public class UpdateEventCommand : IRequest<Result>
     {
+        public int Id { get; set; }
+
         public string Title { get; set; } = string.Empty;
 
         public string Description { get; set; } = string.Empty;
@@ -24,11 +26,5 @@ namespace EventManagementSystem.Application.Usecases.CreateEvent
         public string? City { get; set; }
 
         public string? Country { get; set; }
-
-        public int Capacity { get; set; }
-
-        public string EventType { get; set; } = string.Empty;
-
-        public int CategoryId { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 
-namespace EventManagementSystem.Application.Usecases.CreateEvent
+namespace EventManagementSystem.Application.Usecases.Commands.CreateEvent
 {
     using AutoMapper;
     using EventManagementSystem.Application.Common.Models;
@@ -33,13 +33,13 @@ namespace EventManagementSystem.Application.Usecases.CreateEvent
         public async Task<Result<int>> Handle(CreateEventCommand request, CancellationToken cancellationToken)
         {
             // Validate category exists
-            if (!await this.categoryRepository.ExistsAsync(request.CategoryId, cancellationToken))
+            if (!await categoryRepository.ExistsAsync(request.CategoryId, cancellationToken))
             {
                 return Result.Failure<int>("Category not found");
             }
 
             // Check for duplicate event
-            if (await this.eventRepository.ExistsByTitleAndDateAsync(request.Title, request.StartDateTime, cancellationToken))
+            if (await eventRepository.ExistsByTitleAndDateAsync(request.Title, request.StartDateTime, cancellationToken))
             {
                 return Result.Failure<int>("An event with the same title and date already exists");
             }
@@ -59,8 +59,8 @@ namespace EventManagementSystem.Application.Usecases.CreateEvent
                     request.City,
                     request.Country);
 
-                await this.eventRepository.AddAsync(eventEntity, cancellationToken);
-                await this.unitOfWork.SaveChangesAsync(cancellationToken);
+                await eventRepository.AddAsync(eventEntity, cancellationToken);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 return Result.Success(eventEntity.Id);
             }
