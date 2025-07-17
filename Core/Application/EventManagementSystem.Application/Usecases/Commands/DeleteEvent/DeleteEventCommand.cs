@@ -11,9 +11,9 @@ namespace EventManagementSystem.Application.Usecases.Commands.DeleteEvent
     {
         public DeleteEventCommand(int id)
         {
-            Id = id;
+            this.Id = id;
         }
 
         public int Id { get; set; }
     }
-}
+}s

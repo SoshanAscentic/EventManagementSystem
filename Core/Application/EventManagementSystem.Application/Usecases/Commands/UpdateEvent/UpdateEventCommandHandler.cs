@@ -22,7 +22,7 @@ namespace EventManagementSystem.Application.Usecases.Commands.UpdateEvent
 
         public async Task<Result> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
         {
-            var eventEntity = await eventRepository.GetByIdAsync(EventId.Create(request.Id), cancellationToken);
+            var eventEntity = await this.eventRepository.GetByIdAsync(EventId.Create(request.Id), cancellationToken);
             if (eventEntity == null)
             {
                 return Result.Failure("Event not found");
@@ -40,8 +40,8 @@ namespace EventManagementSystem.Application.Usecases.Commands.UpdateEvent
                     request.City,
                     request.Country);
 
-                eventRepository.Update(eventEntity);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                this.eventRepository.Update(eventEntity);
+                await this.unitOfWork.SaveChangesAsync(cancellationToken);
 
                 return Result.Success();
             }

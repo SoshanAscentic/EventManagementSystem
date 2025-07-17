@@ -22,7 +22,7 @@ namespace EventManagementSystem.Application.Usecases.Commands.DeleteEvent
 
         public async Task<Result> Handle(DeleteEventCommand request, CancellationToken cancellationToken)
         {
-            var eventEntity = await eventRepository.GetByIdWithRegistrationsAsync(
+            var eventEntity = await this.eventRepository.GetByIdWithRegistrationsAsync(
                 EventId.Create(request.Id),
                 cancellationToken);
 
@@ -39,8 +39,8 @@ namespace EventManagementSystem.Application.Usecases.Commands.DeleteEvent
 
             try
             {
-                eventRepository.Remove(eventEntity);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                this.eventRepository.Remove(eventEntity);
+                await this.unitOfWork.SaveChangesAsync(cancellationToken);
 
                 return Result.Success();
             }

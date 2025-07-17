@@ -24,7 +24,7 @@ namespace EventManagementSystem.Application.Usecases.Commands.CancelRegistration
 
         public async Task<Result> Handle(CancelRegistrationCommand request, CancellationToken cancellationToken)
         {
-            var registration = await registrationRepository.GetByIdAsync(
+            var registration = await this.registrationRepository.GetByIdAsync(
                 RegistrationId.Create(request.RegistrationId),
                 cancellationToken);
 
@@ -36,8 +36,8 @@ namespace EventManagementSystem.Application.Usecases.Commands.CancelRegistration
             try
             {
                 registration.Cancel(request.Reason);
-                registrationRepository.Update(registration);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                this.registrationRepository.Update(registration);
+                await this.unitOfWork.SaveChangesAsync(cancellationToken);
 
                 return Result.Success();
             }

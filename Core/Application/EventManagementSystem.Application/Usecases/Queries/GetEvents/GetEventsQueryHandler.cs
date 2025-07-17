@@ -32,7 +32,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
                     eventType = EventType.Create(request.EventType);
                 }
 
-                var (events, totalCount) = await eventRepository.SearchEventsAsync(
+                var (events, totalCount) = await this.eventRepository.SearchEventsAsync(
                     request.SearchTerm,
                     request.CategoryId,
                     eventType,
@@ -46,7 +46,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
                     request.Ascending,
                     cancellationToken);
 
-                var eventDtos = mapper.Map<List<EventDto>>(events);
+                var eventDtos = this.mapper.Map<List<EventDto>>(events);
                 var pagedResult = new PagedResult<EventDto>(eventDtos, totalCount, request.PageNumber, request.PageSize);
 
                 return Result.Success(pagedResult);
