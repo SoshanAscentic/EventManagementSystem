@@ -4,13 +4,31 @@
 
 namespace EventManagementSystem.Application.Usecases.CreateEvent
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
+    using EventManagementSystem.Application.Common.Models;
+    using MediatR;
 
-    internal class CreateEventCommand
+    public class CreateEventCommand : IRequest<Result<int>>
     {
+        public string Title { get; set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
+
+        public DateTime StartDateTime { get; set; }
+
+        public DateTime EndDateTime { get; set; }
+
+        public string Venue { get; set; } = string.Empty;
+
+        public string Address { get; set; } = string.Empty;
+
+        public string? City { get; set; }
+
+        public string? Country { get; set; }
+
+        public int Capacity { get; set; }
+
+        public string EventType { get; set; } = string.Empty;
+
+        public int CategoryId { get; set; }
     }
 }

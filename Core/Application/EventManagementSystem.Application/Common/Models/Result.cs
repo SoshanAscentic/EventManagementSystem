@@ -65,35 +65,39 @@ namespace EventManagementSystem.Application.Common.Models
         }
     }
 
-    public class Result<T> : Result
+    public class Result<T>
     {
         private readonly T? value;
 
         internal Result(T? value, bool isSuccess, IEnumerable<string> errors)
-            : base(isSuccess, errors)
         {
             this.value = value;
+            this.IsSuccess = isSuccess;
+            this.Errors = errors?.ToArray() ?? Array.Empty<string>();
         }
+
+        public bool IsSuccess { get; }
+
+        public bool IsFailure => !this.IsSuccess;
+
+        public string[] Errors { get; }
+
+        public string Error => this.Errors.FirstOrDefault() ?? string.Empty;
 
         public T Value => this.IsSuccess ? this.value! : throw new InvalidOperationException("Cannot access value of failed result");
 
         public T? ValueOrDefault => this.value;
 
-        public static implicit operator Result<T>(T value) => Success(value);
-
-        public static implicit operator Result<T>(Result result)
-        {
-            return result.IsSuccess ? Success(default(T) !) : Failure<T>(result.Errors);
-        }
+        public static implicit operator Result<T>(T value) => Result.Success(value);
 
         public Result<TNew> Map<TNew>(Func<T, TNew> mapper)
         {
-            return this.IsSuccess ? Success(mapper(this.Value)) : Failure<TNew>(this.Errors);
+            return this.IsSuccess ? Result.Success(mapper(this.Value)) : Result.Failure<TNew>(this.Errors);
         }
 
         public async Task<Result<TNew>> MapAsync<TNew>(Func<T, Task<TNew>> mapper)
         {
-            return this.IsSuccess ? Success(await mapper(this.Value)) : Failure<TNew>(this.Errors);
+            return this.IsSuccess ? Result.Success(await mapper(this.Value)) : Result.Failure<TNew>(this.Errors);
         }
 
         public Result<T> OnSuccess(Action<T> action)
@@ -114,6 +118,11 @@ namespace EventManagementSystem.Application.Common.Models
             }
 
             return this;
+        }
+
+        public override string ToString()
+        {
+            return this.IsSuccess ? "Success" : $"Failure: {string.Join(", ", this.Errors)}";
         }
     }
 }
