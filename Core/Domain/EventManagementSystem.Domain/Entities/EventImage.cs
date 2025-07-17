@@ -27,13 +27,13 @@ namespace EventManagementSystem.Domain.Entities
 
         public bool IsPrimary { get; private set; }
 
-        public string? Alt { get; private set; }
+        public DateTime UploadedAt { get; private set; }
 
         // Navigation property
         public Event? Event { get; private set; }
 
-        // Factory method for creating new images
-        public static EventImage Create(EventId eventId, string fileName, string filePath, long fileSize, bool isPrimary = false, string? alt = null)
+        // Factory method
+        public static EventImage Create(EventId eventId, string fileName, string filePath, long fileSize, bool isPrimary = false)
         {
             return new EventImage
             {
@@ -42,20 +42,20 @@ namespace EventManagementSystem.Domain.Entities
                 FilePath = ValidateFilePath(filePath),
                 FileSize = ValidateFileSize(fileSize),
                 IsPrimary = isPrimary,
-                Alt = alt?.Trim(),
+                UploadedAt = DateTime.UtcNow,
             };
         }
 
-        // Business Methods
+        // Business methods
         public void SetPrimary(bool isPrimary)
         {
             this.IsPrimary = isPrimary;
             this.MarkAsUpdated();
         }
 
-        public void UpdateAlt(string? alt)
+        public void UpdateFilePath(string newFilePath)
         {
-            this.Alt = alt?.Trim();
+            this.FilePath = ValidateFilePath(newFilePath);
             this.MarkAsUpdated();
         }
 
@@ -64,11 +64,6 @@ namespace EventManagementSystem.Domain.Entities
             if (string.IsNullOrWhiteSpace(fileName))
             {
                 throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
-            }
-
-            if (fileName.Length > 255)
-            {
-                throw new ArgumentException("File name cannot exceed 255 characters", nameof(fileName));
             }
 
             return fileName.Trim();
@@ -81,11 +76,6 @@ namespace EventManagementSystem.Domain.Entities
                 throw new ArgumentException("File path cannot be null or empty", nameof(filePath));
             }
 
-            if (filePath.Length > 500)
-            {
-                throw new ArgumentException("File path cannot exceed 500 characters", nameof(filePath));
-            }
-
             return filePath.Trim();
         }
 
@@ -93,13 +83,13 @@ namespace EventManagementSystem.Domain.Entities
         {
             if (fileSize <= 0)
             {
-                throw new ArgumentException("File size must be positive", nameof(fileSize));
+                throw new ArgumentException("File size must be greater than 0", nameof(fileSize));
             }
 
             const long maxFileSize = 10 * 1024 * 1024; // 10MB
             if (fileSize > maxFileSize)
             {
-                throw new ArgumentException($"File size cannot exceed {maxFileSize / (1024 * 1024)}MB", nameof(fileSize));
+                throw new ArgumentException($"File size cannot exceed {maxFileSize} bytes", nameof(fileSize));
             }
 
             return fileSize;

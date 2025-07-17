@@ -6,6 +6,7 @@ namespace EventManagementSystem.Domain.Repositories
 {
     using EventManagementSystem.Domain.Common;
     using EventManagementSystem.Domain.Entities;
+    using EventManagementSystem.Domain.Enums;
     using EventManagementSystem.Domain.ValueObjects;
 
     public interface IEventRepository : IGenericRepository<Event>

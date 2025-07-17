@@ -4,7 +4,6 @@
 
 namespace EventManagementSystem.Domain.Events.Registration
 {
-    using System;
     using EventManagementSystem.Domain.Common;
     using EventManagementSystem.Domain.ValueObjects;
 

@@ -5,46 +5,46 @@
 namespace EventManagementSystem.Domain.Entities
 {
     using EventManagementSystem.Domain.Common;
+    using EventManagementSystem.Domain.Events.System;
 
-    public class EventCategory : BaseEntity
+    public class EventCategory : BaseEntity, IAggregateRoot
     {
+        private readonly List<Event> events = new ();
+
         // Private constructor for EF Core
         private EventCategory()
         {
             this.Name = string.Empty;
             this.Description = string.Empty;
-            this.ColorCode = string.Empty;
         }
 
         public string Name { get; private set; }
 
         public string Description { get; private set; }
 
-        public string ColorCode { get; private set; }
-
-        public bool IsActive { get; private set; }
+        public bool IsActive { get; private set; } = true;
 
         // Navigation property
-        public ICollection<Event> Events { get; private set; } = new List<Event>();
+        public IReadOnlyCollection<Event> Events => this.events.AsReadOnly();
 
-        // Factory method for creating new categories
-        public static EventCategory Create(string name, string description, string colorCode = "#007bff")
+        // Factory method
+        public static EventCategory Create(string name, string description)
         {
-            return new EventCategory
+            var category = new EventCategory
             {
                 Name = ValidateName(name),
                 Description = ValidateDescription(description),
-                ColorCode = ValidateColorCode(colorCode),
-                IsActive = true,
             };
+
+            category.AddDomainEvent(new EventCategoryCreatedEvent(category.Id, category.Name, category.Description));
+            return category;
         }
 
-        // Business Methods
-        public void UpdateDetails(string name, string description, string colorCode)
+        // Business methods
+        public void UpdateDetails(string name, string description)
         {
             this.Name = ValidateName(name);
             this.Description = ValidateDescription(description);
-            this.ColorCode = ValidateColorCode(colorCode);
             this.MarkAsUpdated();
         }
 
@@ -56,6 +56,11 @@ namespace EventManagementSystem.Domain.Entities
 
         public void Deactivate()
         {
+            if (this.events.Any(e => e.IsUpcoming))
+            {
+                throw new InvalidOperationException("Cannot deactivate category with upcoming events");
+            }
+
             this.IsActive = false;
             this.MarkAsUpdated();
         }
@@ -90,22 +95,6 @@ namespace EventManagementSystem.Domain.Entities
             }
 
             return trimmedDescription;
-        }
-
-        private static string ValidateColorCode(string colorCode)
-        {
-            if (string.IsNullOrWhiteSpace(colorCode))
-            {
-                return "#007bff"; // Default blue
-            }
-
-            var trimmedColor = colorCode.Trim();
-            if (!trimmedColor.StartsWith("#") || trimmedColor.Length != 7)
-            {
-                throw new ArgumentException("Color code must be in hex format (#RRGGBB)", nameof(colorCode));
-            }
-
-            return trimmedColor;
         }
     }
 }

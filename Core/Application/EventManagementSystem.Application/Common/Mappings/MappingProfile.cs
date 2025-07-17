@@ -5,6 +5,7 @@
 namespace EventManagementSystem.Application.Common.Mappings
 {
     using AutoMapper;
+    using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Domain.Entities;
 
     public class MappingProfile : Profile
