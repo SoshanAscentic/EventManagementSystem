@@ -4,11 +4,6 @@
 
 namespace EventManagementSystem.Application.Usecases.Commands.UpdateUserProfile
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using FluentValidation;
 
     public class UpdateUserProfileCommandValidator : AbstractValidator<UpdateUserProfileCommand>
@@ -35,7 +30,9 @@ namespace EventManagementSystem.Application.Usecases.Commands.UpdateUserProfile
         private static bool BeValidPhoneOrEmpty(string? phone)
         {
             if (string.IsNullOrWhiteSpace(phone))
+            {
                 return true;
+            }
 
             try
             {
