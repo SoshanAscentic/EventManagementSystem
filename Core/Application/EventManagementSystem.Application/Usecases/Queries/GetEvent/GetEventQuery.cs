@@ -12,7 +12,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvent
     {
         public GetEventQuery(int id)
         {
-            Id = id;
+            this.Id = id;
         }
 
         public int Id { get; set; }

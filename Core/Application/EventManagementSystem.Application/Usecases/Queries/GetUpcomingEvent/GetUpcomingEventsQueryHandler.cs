@@ -5,26 +5,35 @@
 namespace EventManagementSystem.Application.Usecases.Queries.GetUpcomingEvent
 {
     using AutoMapper;
+    using EventManagementSystem.Application.Common.Constants;
     using EventManagementSystem.Application.Common.Models;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Domain.Repositories;
     using MediatR;
+    using Microsoft.Extensions.Logging;
 
     public class GetUpcomingEventsQueryHandler : IRequestHandler<GetUpcomingEventsQuery, Result<List<EventDto>>>
     {
         private readonly IEventRepository eventRepository;
         private readonly IMapper mapper;
+        private readonly ILogger<GetUpcomingEventsQueryHandler> logger;
 
-        public GetUpcomingEventsQueryHandler(IEventRepository eventRepository, IMapper mapper)
+        public GetUpcomingEventsQueryHandler(
+            IEventRepository eventRepository,
+            IMapper mapper,
+            ILogger<GetUpcomingEventsQueryHandler> logger)
         {
             this.eventRepository = eventRepository;
             this.mapper = mapper;
+            this.logger = logger;
         }
 
         public async Task<Result<List<EventDto>>> Handle(GetUpcomingEventsQuery request, CancellationToken cancellationToken)
         {
             try
             {
+                this.logger.LogInformation("Getting upcoming events, CategoryId: {CategoryId}, Count: {Count}", request.CategoryId, request.Count);
+
                 var upcomingEvents = await this.eventRepository.GetUpcomingEventsAsync(
                     request.CategoryId,
                     cancellationToken);
@@ -32,11 +41,18 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetUpcomingEvent
                 var limitedEvents = upcomingEvents.Take(request.Count).ToList();
                 var eventDtos = this.mapper.Map<List<EventDto>>(limitedEvents);
 
-                return Result.Success(eventDtos);
+                this.logger.LogInformation("Successfully retrieved {Count} upcoming events", eventDtos.Count);
+                return eventDtos;
+            }
+            catch (ArgumentException ex) when (ex.Message.Contains("category"))
+            {
+                this.logger.LogWarning(ex, "Invalid category ID provided: {CategoryId}", request.CategoryId);
+                return DomainErrors.Category.NotFound(request.CategoryId ?? 0);
             }
             catch (Exception ex)
             {
-                return Result.Failure<List<EventDto>>($"Failed to retrieve upcoming events: {ex.Message}");
+                this.logger.LogError(ex, "Unexpected error getting upcoming events");
+                return DomainErrors.General.UnexpectedError();
             }
         }
     }

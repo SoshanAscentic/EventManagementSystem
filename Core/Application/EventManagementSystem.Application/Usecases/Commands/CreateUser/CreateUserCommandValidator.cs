@@ -10,20 +10,20 @@ namespace EventManagementSystem.Application.Usecases.Commands.CreateUser
     {
         public CreateUserCommandValidator()
         {
-            RuleFor(x => x.Email)
+            this.RuleFor(x => x.Email)
                 .NotEmpty()
                 .EmailAddress()
                 .MaximumLength(254);
 
-            RuleFor(x => x.FirstName)
+            this.RuleFor(x => x.FirstName)
                 .NotEmpty()
                 .MaximumLength(50);
 
-            RuleFor(x => x.LastName)
+            this.RuleFor(x => x.LastName)
                 .NotEmpty()
                 .MaximumLength(50);
 
-            RuleFor(x => x.Phone)
+            this.RuleFor(x => x.Phone)
                 .Must(BeValidPhoneOrEmpty)
                 .WithMessage("Invalid phone format")
                 .When(x => !string.IsNullOrWhiteSpace(x.Phone));

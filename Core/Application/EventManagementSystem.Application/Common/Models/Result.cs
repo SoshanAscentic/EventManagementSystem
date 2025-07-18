@@ -6,101 +6,150 @@ namespace EventManagementSystem.Application.Common.Models
 {
     public class Result
     {
-        private static readonly Result SuccessValue = new (true, Array.Empty<string>());
-        private static readonly Dictionary<string, Result> FailureCache = new ();
-
-        protected Result(bool isSuccess, IEnumerable<string> errors)
+        protected Result(bool isSuccess, Error error)
         {
+            if (isSuccess && error != Error.None)
+            {
+                throw new InvalidOperationException("Success result cannot have an error");
+            }
+
+            if (!isSuccess && error == Error.None)
+            {
+                throw new InvalidOperationException("Failure result must have an error");
+            }
+
             this.IsSuccess = isSuccess;
-            this.Errors = errors?.ToArray() ?? Array.Empty<string>();
+            this.Error = error;
+        }
+
+        protected Result(bool isSuccess, Error[] errors)
+        {
+            if (isSuccess && errors.Any(e => e != Error.None))
+            {
+                throw new InvalidOperationException("Success result cannot have errors");
+            }
+
+            if (!isSuccess && !errors.Any())
+            {
+                throw new InvalidOperationException("Failure result must have at least one error");
+            }
+
+            this.IsSuccess = isSuccess;
+            this.Errors = errors;
+            this.Error = errors.FirstOrDefault() ?? Error.None;
         }
 
         public bool IsSuccess { get; }
 
         public bool IsFailure => !this.IsSuccess;
 
-        public string[] Errors { get; }
+        public Error Error { get; } = Error.None;
 
-        public string Error => this.Errors.FirstOrDefault() ?? string.Empty;
+        public Error[] Errors { get; } = Array.Empty<Error>();
 
-        public static Result Success() => SuccessValue;
+        public static implicit operator Result(Error error) => Failure(error);
 
-        public static Result Failure(string error)
-        {
-            if (string.IsNullOrEmpty(error))
-            {
-                return SuccessValue;
-            }
+        public static Result Success() => new (true, Error.None);
 
-            // Cache common failures for performance
-            if (FailureCache.TryGetValue(error, out var cachedResult))
-            {
-                return cachedResult;
-            }
+        public static Result Failure(Error error) => new (false, error);
 
-            var result = new Result(false, new[] { error });
-            if (FailureCache.Count < 100) // Limit cache size
-            {
-                FailureCache[error] = result;
-            }
+        public static Result Failure(Error[] errors) => new (false, errors);
 
-            return result;
-        }
+        public static Result Failure(string code, string message) => new (false, Error.Failure(code, message));
 
-        public static Result Failure(IEnumerable<string> errors)
-        {
-            var errorArray = errors?.ToArray() ?? Array.Empty<string>();
-            return errorArray.Length == 0 ? SuccessValue : new Result(false, errorArray);
-        }
+        // Specific error type methods
+        public static Result ValidationFailure(string code, string message) =>
+            new (false, Error.Validation(code, message));
 
-        public static Result<T> Success<T>(T value) => new (value, true, Array.Empty<string>());
+        public static Result NotFound(string code, string message) =>
+            new (false, Error.NotFound(code, message));
 
-        public static Result<T> Failure<T>(string error) => new (default, false, new[] { error });
+        public static Result Conflict(string code, string message) =>
+            new (false, Error.Conflict(code, message));
 
-        public static Result<T> Failure<T>(IEnumerable<string> errors) => new (default, false, errors);
+        public static Result Unauthorized(string code, string message) =>
+            new (false, Error.Unauthorized(code, message));
 
-        public override string ToString()
-        {
-            return this.IsSuccess ? "Success" : $"Failure: {string.Join(", ", this.Errors)}";
-        }
+        public static Result Forbidden(string code, string message) =>
+            new (false, Error.Forbidden(code, message));
+
+        public static Result BadRequest(string code, string message) =>
+            new (false, Error.BadRequest(code, message));
+
+        // Backward compatibility methods
+        public string GetErrorMessage() => this.Error.Message;
+
+        public string[] GetErrorMessages() => this.Errors.Select(e => e.Message).ToArray();
+
+        public string[] GetErrorCodes() => this.Errors.Select(e => e.Code).ToArray();
     }
 
-    public class Result<T>
+    public class Result<T> : Result
     {
         private readonly T? value;
 
-        internal Result(T? value, bool isSuccess, IEnumerable<string> errors)
+        protected Result(T? value, bool isSuccess, Error error)
+            : base(isSuccess, error)
         {
             this.value = value;
-            this.IsSuccess = isSuccess;
-            this.Errors = errors?.ToArray() ?? Array.Empty<string>();
         }
 
-        public bool IsSuccess { get; }
+        protected Result(T? value, bool isSuccess, Error[] errors)
+            : base(isSuccess, errors)
+        {
+            this.value = value;
+        }
 
-        public bool IsFailure => !this.IsSuccess;
-
-        public string[] Errors { get; }
-
-        public string Error => this.Errors.FirstOrDefault() ?? string.Empty;
-
-        public T Value => this.IsSuccess ? this.value! : throw new InvalidOperationException("Cannot access value of failed result");
+        public T Value => this.IsSuccess
+            ? this.value!
+            : throw new InvalidOperationException("Cannot access value of a failed result");
 
         public T? ValueOrDefault => this.value;
 
-        public static implicit operator Result<T>(T value) => Result.Success(value);
+        public static implicit operator Result<T>(T value) =>
+           value is not null ? Success(value) : Failure(Error.NullValue);
 
+        public static implicit operator Result<T>(Error error) => Failure(error);
+
+        public static Result<T> Success(T value) => new (value, true, Error.None);
+
+        public static new Result<T> Failure(Error error) => new (default, false, error);
+
+        public static new Result<T> Failure(Error[] errors) => new (default, false, errors);
+
+        public static new Result<T> Failure(string code, string message) =>
+            new (default, false, Error.Failure(code, message));
+
+        public static new Result<T> ValidationFailure(string code, string message) =>
+            new (default, false, Error.Validation(code, message));
+
+        public static new Result<T> NotFound(string code, string message) =>
+            new (default, false, Error.NotFound(code, message));
+
+        public static new Result<T> Conflict(string code, string message) =>
+            new (default, false, Error.Conflict(code, message));
+
+        public static new Result<T> Unauthorized(string code, string message) =>
+            new (default, false, Error.Unauthorized(code, message));
+
+        public static new Result<T> Forbidden(string code, string message) =>
+            new (default, false, Error.Forbidden(code, message));
+
+        public static new Result<T> BadRequest(string code, string message) =>
+            new (default, false, Error.BadRequest(code, message));
+
+        // Functional programming methods
         public Result<TNew> Map<TNew>(Func<T, TNew> mapper)
         {
-            return this.IsSuccess ? Result.Success(mapper(this.Value)) : Result.Failure<TNew>(this.Errors);
+            return this.IsSuccess ? Result<TNew>.Success(mapper(this.Value)) : Result<TNew>.Failure(this.Error);
         }
 
         public async Task<Result<TNew>> MapAsync<TNew>(Func<T, Task<TNew>> mapper)
         {
-            return this.IsSuccess ? Result.Success(await mapper(this.Value)) : Result.Failure<TNew>(this.Errors);
+            return this.IsSuccess ? Result<TNew>.Success(await mapper(this.Value)) : Result<TNew>.Failure(this.Error);
         }
 
-        public Result<T> OnSuccess(Action<T> action)
+        public Result<T> Tap(Action<T> action)
         {
             if (this.IsSuccess)
             {
@@ -110,19 +159,14 @@ namespace EventManagementSystem.Application.Common.Models
             return this;
         }
 
-        public Result<T> OnFailure(Action<string[]> action)
+        public async Task<Result<T>> TapAsync(Func<T, Task> action)
         {
-            if (this.IsFailure)
+            if (this.IsSuccess)
             {
-                action(this.Errors);
+                await action(this.Value);
             }
 
             return this;
-        }
-
-        public override string ToString()
-        {
-            return this.IsSuccess ? "Success" : $"Failure: {string.Join(", ", this.Errors)}";
         }
     }
 }

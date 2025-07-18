@@ -5,55 +5,60 @@
 namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
 {
     using AutoMapper;
+    using EventManagementSystem.Application.Common.Constants;
     using EventManagementSystem.Application.Common.Models;
     using EventManagementSystem.Application.DTOs;
+    using EventManagementSystem.Application.Usecases.Queries.GetEvent;
     using EventManagementSystem.Domain.Repositories;
     using EventManagementSystem.Domain.ValueObjects;
     using MediatR;
+    using Microsoft.Extensions.Logging;
 
-    public class GetEventsQueryHandler : IRequestHandler<GetEventsQuery, Result<PagedResult<EventDto>>>
+    public class GetEventsQueryHandler : IRequestHandler<GetEventQuery, Result<EventDto>>
     {
         private readonly IEventRepository eventRepository;
         private readonly IMapper mapper;
+        private readonly ILogger<GetEventsQueryHandler> logger;
 
-        public GetEventsQueryHandler(IEventRepository eventRepository, IMapper mapper)
+        public GetEventsQueryHandler(
+            IEventRepository eventRepository,
+            IMapper mapper,
+            ILogger<GetEventsQueryHandler> logger)
         {
             this.eventRepository = eventRepository;
             this.mapper = mapper;
+            this.logger = logger;
         }
 
-        public async Task<Result<PagedResult<EventDto>>> Handle(GetEventsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<EventDto>> Handle(GetEventQuery request, CancellationToken cancellationToken)
         {
             try
             {
-                EventType? eventType = null;
-                if (!string.IsNullOrEmpty(request.EventType))
-                {
-                    eventType = EventType.Create(request.EventType);
-                }
+                this.logger.LogInformation("Getting event: {EventId}", request.Id);
 
-                var (events, totalCount) = await this.eventRepository.SearchEventsAsync(
-                    request.SearchTerm,
-                    request.CategoryId,
-                    eventType,
-                    request.StartDate,
-                    request.EndDate,
-                    request.Location,
-                    request.HasAvailableSpots,
-                    request.PageNumber,
-                    request.PageSize,
-                    request.SortBy,
-                    request.Ascending,
+                var eventEntity = await this.eventRepository.GetByIdWithAllDetailsAsync(
+                    Domain.ValueObjects.EventId.Create(request.Id),
                     cancellationToken);
 
-                var eventDtos = this.mapper.Map<List<EventDto>>(events);
-                var pagedResult = new PagedResult<EventDto>(eventDtos, totalCount, request.PageNumber, request.PageSize);
+                if (eventEntity == null)
+                {
+                    this.logger.LogWarning("Event not found: {EventId}", request.Id);
+                    return DomainErrors.Event.NotFound(request.Id);
+                }
 
-                return Result.Success(pagedResult);
+                var eventDto = this.mapper.Map<EventDto>(eventEntity);
+                this.logger.LogInformation("Successfully retrieved event: {EventId}", request.Id);
+                return eventDto;
+            }
+            catch (ArgumentException ex) when (ex.Message.Contains("ID"))
+            {
+                this.logger.LogWarning(ex, "Invalid event ID provided: {EventId}", request.Id);
+                return DomainErrors.General.InvalidId("Event");
             }
             catch (Exception ex)
             {
-                return Result.Failure<PagedResult<EventDto>>($"Failed to retrieve events: {ex.Message}");
+                this.logger.LogError(ex, "Unexpected error getting event: {EventId}", request.Id);
+                return DomainErrors.General.UnexpectedError();
             }
         }
     }

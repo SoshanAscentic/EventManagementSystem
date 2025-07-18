@@ -34,14 +34,14 @@ namespace EventManagementSystem.Application.Common.Services
                     var handleMethod = handlerType.GetMethod("Handle");
                     if (handleMethod != null)
                     {
-                        await (Task)handleMethod.Invoke(handler, new object[] { domainEvent, cancellationToken })!;
+                        await (Task)handleMethod.Invoke(handler, new object[] { domainEvent, cancellationToken }) !;
                     }
                 }
                 catch (Exception ex)
                 {
                     this.logger.LogError(ex, "Error handling domain event {EventType}", eventType.Name);
-                    // Don't rethrow - domain events should not fail the main operation
                 }
             }
         }
     }
+}

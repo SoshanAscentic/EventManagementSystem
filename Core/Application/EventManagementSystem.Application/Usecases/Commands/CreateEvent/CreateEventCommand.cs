@@ -5,9 +5,10 @@
 namespace EventManagementSystem.Application.Usecases.Commands.CreateEvent
 {
     using EventManagementSystem.Application.Common.Models;
+    using EventManagementSystem.Application.DTOs;
     using MediatR;
 
-    public class CreateEventCommand : IRequest<Result<int>>
+    public class CreateEventCommand : IRequest<Result<EventDto>>, IBaseRequest
     {
         public string Title { get; set; } = string.Empty;
 

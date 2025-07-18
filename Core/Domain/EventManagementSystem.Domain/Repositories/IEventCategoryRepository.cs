@@ -9,8 +9,10 @@ namespace EventManagementSystem.Domain.Repositories
 
     public interface IEventCategoryRepository : IGenericRepository<EventCategory>
     {
-        // Category-specific query operations
-        Task<EventCategory?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        new
+
+                // Category-specific query operations
+                Task<EventCategory?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         Task<EventCategory?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
 
