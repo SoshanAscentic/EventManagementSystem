@@ -25,7 +25,9 @@ namespace EventManagementSystem.Domain.Entities
 
         // Properties that EF Core will map directly
         public DateTime RegisteredAt { get; private set; }
+
         public DateTime? CancelledAt { get; private set; }
+
         public string? Notes { get; private set; }
 
         // Value object properties with backing fields
@@ -51,11 +53,14 @@ namespace EventManagementSystem.Domain.Entities
 
         // Navigation Properties
         public Event? Event { get; private set; }
+
         public User? User { get; private set; }
 
         // Business Properties
         public bool IsActive => this.Status.IsActive;
+
         public bool IsCancelled => this.Status.IsCancelled;
+
         public TimeSpan? RegistrationDuration => this.CancelledAt?.Subtract(this.RegisteredAt);
 
         // Factory method for creating new registrations

@@ -27,6 +27,7 @@ namespace EventManagementSystem.Domain.Entities
 
         // Properties that EF Core will map directly
         public string FirstName { get; private set; }
+
         public string LastName { get; private set; }
 
         // Value object properties with backing fields
@@ -44,8 +45,11 @@ namespace EventManagementSystem.Domain.Entities
 
         // Computed Properties
         public UserId UserId => this.Id > 0 ? UserId.Create(this.Id) : UserId.CreateNew();
+
         public string FullName => $"{this.FirstName} {this.LastName}".Trim();
+
         public IReadOnlyCollection<EventRegistration> Registrations => this.registrations.AsReadOnly();
+
         public int ActiveRegistrationsCount => this.registrations.Count(r => r.Status.IsActive);
 
         // Factory method for creating new users
