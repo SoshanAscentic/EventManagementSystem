@@ -18,23 +18,7 @@ namespace EventManagementSystem.Persistence.Configurations
             // Primary key
             builder.HasKey(u => u.Id);
 
-            // Value Object configurations
-            builder.OwnsOne(u => u.Email, email =>
-            {
-                email.Property(x => x.Value)
-                    .HasColumnName("Email")
-                    .HasMaxLength(254)
-                    .IsRequired();
-            });
-
-            builder.OwnsOne(u => u.Phone, phone =>
-            {
-                phone.Property(x => x.Value)
-                    .HasColumnName("Phone")
-                    .HasMaxLength(20);
-            });
-
-            // Properties
+            // Basic properties
             builder.Property(u => u.FirstName)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -42,6 +26,16 @@ namespace EventManagementSystem.Persistence.Configurations
             builder.Property(u => u.LastName)
                 .IsRequired()
                 .HasMaxLength(50);
+
+            // Map backing fields directly instead of using owned types
+            builder.Property("_email")
+                .HasColumnName("Email")
+                .HasMaxLength(254)
+                .IsRequired();
+
+            builder.Property("_phone")
+                .HasColumnName("Phone")
+                .HasMaxLength(20);
 
             builder.Property(u => u.CreatedAt)
                 .IsRequired();
@@ -56,15 +50,17 @@ namespace EventManagementSystem.Persistence.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes
-            builder.HasIndex("Email")
+            builder.HasIndex("_email")
                 .IsUnique()
                 .HasDatabaseName("IX_Users_Email");
 
             builder.HasIndex(u => new { u.FirstName, u.LastName })
                 .HasDatabaseName("IX_Users_FirstName_LastName");
 
-            // Ignore computed properties
+            // Ignore computed properties, value objects, and domain events
             builder.Ignore(u => u.UserId);
+            builder.Ignore(u => u.Email);
+            builder.Ignore(u => u.Phone);
             builder.Ignore(u => u.FullName);
             builder.Ignore(u => u.ActiveRegistrationsCount);
             builder.Ignore(u => u.DomainEvents);

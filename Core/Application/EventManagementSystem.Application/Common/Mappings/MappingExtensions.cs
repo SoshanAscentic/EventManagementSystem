@@ -34,11 +34,11 @@ namespace EventManagementSystem.Application.Common.Mappings
         {
             if (source.IsFailure)
             {
-                return Result.Failure<TDestination>(source.Errors);
+                return Result<TDestination>.Failure(source.Errors);
             }
 
             var mappedValue = mapper.Map<TDestination>(source.Value);
-            return Result.Success(mappedValue);
+            return Result<TDestination>.Success(mappedValue);
         }
     }
 }

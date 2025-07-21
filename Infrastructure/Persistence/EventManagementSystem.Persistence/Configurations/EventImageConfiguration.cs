@@ -18,15 +18,12 @@ namespace EventManagementSystem.Persistence.Configurations
             // Primary key
             builder.HasKey(i => i.Id);
 
-            // Value Object configuration
-            builder.OwnsOne(i => i.EventId, eid =>
-            {
-                eid.Property(x => x.Value)
-                    .HasColumnName("EventId")
-                    .IsRequired();
-            });
+            // Map backing field directly instead of using owned type
+            builder.Property("_eventId")
+                .HasColumnName("EventId")
+                .IsRequired();
 
-            // Properties
+            // Basic properties
             builder.Property(i => i.FileName)
                 .IsRequired()
                 .HasMaxLength(255);
@@ -51,24 +48,27 @@ namespace EventManagementSystem.Persistence.Configurations
             builder.Property(i => i.UpdatedAt)
                 .IsRequired();
 
-            // Relationships
+            // Relationships using backing field
             builder.HasOne(i => i.Event)
                 .WithMany(e => e.Images)
-                .HasForeignKey("EventId")
+                .HasForeignKey("_eventId")
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes
-            builder.HasIndex("EventId")
+            builder.HasIndex("_eventId")
                 .HasDatabaseName("IX_EventImages_EventId");
 
             builder.HasIndex(i => i.IsPrimary)
                 .HasDatabaseName("IX_EventImages_IsPrimary");
 
-            // Constraints - Only one primary image per event
-            builder.HasIndex("EventId", i => i.IsPrimary)
+            // Constraint - Only one primary image per event
+            builder.HasIndex("_eventId", nameof(EventImage.IsPrimary))
                 .IsUnique()
-                .HasDatabaseName("IX_EventImages_EventId_IsPrimary")
+                .HasDatabaseName("IX_EventImages_EventId_IsPrimary_Unique")
                 .HasFilter("[IsPrimary] = 1");
+
+            // Ignore value object property
+            builder.Ignore(i => i.EventId);
         }
     }
 }

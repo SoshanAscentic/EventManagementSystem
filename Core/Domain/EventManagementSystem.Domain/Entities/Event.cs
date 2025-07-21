@@ -10,61 +10,89 @@ namespace EventManagementSystem.Domain.Entities
 
     public class Event : BaseEntity, IAggregateRoot
     {
-        private readonly List<EventRegistration> registrations = new ();
-        private readonly List<EventImage> images = new ();
+        private readonly List<EventRegistration> registrations = new();
+        private readonly List<EventImage> images = new();
 
         // Private constructor for EF Core
         private Event()
         {
             this.Title = string.Empty;
             this.Description = string.Empty;
-            this.EventDateTime = null!;
-            this.Location = null!;
-            this.Capacity = null!;
-            this.EventType = null!;
+            // Initialize backing fields with default values
+            this._startDateTime = DateTime.UtcNow;
+            this._endDateTime = DateTime.UtcNow.AddHours(1);
+            this._venue = string.Empty;
+            this._address = string.Empty;
+            this._capacity = 1;
+            this._eventType = "Conference";
         }
 
-        // Value Objects
-        public EventId EventId => this.Id > 0 ? EventId.Create(this.Id) : EventId.CreateNew();
+        // Backing fields for owned type properties
+        private DateTime _startDateTime;
+        private DateTime _endDateTime;
+        private string _venue;
+        private string _address;
+        private string? _city;
+        private string? _country;
+        private int _capacity;
+        private string _eventType;
 
+        // Properties that EF Core will map directly
         public string Title { get; private set; }
-
         public string Description { get; private set; }
-
-        public EventDateTime EventDateTime { get; private set; }
-
-        public EventLocation Location { get; private set; }
-
-        public EventCapacity Capacity { get; private set; }
-
-        public EventType EventType { get; private set; }
-
-        // Foreign Key
         public int CategoryId { get; private set; }
+
+        // Owned type properties with proper backing
+        public EventDateTime EventDateTime
+        {
+            get => EventDateTime.CreateForExisting(this._startDateTime, this._endDateTime);
+            private set
+            {
+                this._startDateTime = value.StartDateTime;
+                this._endDateTime = value.EndDateTime;
+            }
+        }
+
+        public EventLocation Location
+        {
+            get => EventLocation.Create(this._venue, this._address, this._city, this._country);
+            private set
+            {
+                this._venue = value.Venue;
+                this._address = value.Address;
+                this._city = value.City;
+                this._country = value.Country;
+            }
+        }
+
+        public EventCapacity Capacity
+        {
+            get => EventCapacity.Create(this._capacity);
+            private set => this._capacity = value.Value;
+        }
+
+        public EventType EventType
+        {
+            get => EventType.Create(this._eventType);
+            private set => this._eventType = value.Value;
+        }
+
+        // Computed Properties
+        public EventId EventId => this.Id > 0 ? EventId.Create(this.Id) : EventId.CreateNew();
 
         // Navigation Properties
         public EventCategory? Category { get; private set; }
-
         public IReadOnlyCollection<EventRegistration> Registrations => this.registrations.AsReadOnly();
-
         public IReadOnlyCollection<EventImage> Images => this.images.AsReadOnly();
 
         // Business Properties
         public int CurrentRegistrations => this.registrations.Count(r => r.Status.IsActive);
-
         public bool IsFull => this.Capacity.IsFull(this.CurrentRegistrations);
-
         public int RemainingCapacity => this.Capacity.RemainingCapacity(this.CurrentRegistrations);
-
         public bool IsRegistrationOpen => this.EventDateTime.IsRegistrationOpen && !this.IsFull;
-
         public bool IsUpcoming => this.EventDateTime.IsUpcoming;
-
         public bool IsOngoing => this.EventDateTime.IsOngoing;
-
         public bool IsCompleted => this.EventDateTime.IsCompleted;
-
-        // Primary image for display
         public EventImage? PrimaryImage => this.images.FirstOrDefault(i => i.IsPrimary) ?? this.images.FirstOrDefault();
 
         // Factory method for creating new events
@@ -85,12 +113,14 @@ namespace EventManagementSystem.Domain.Entities
             {
                 Title = ValidateTitle(title),
                 Description = ValidateDescription(description),
-                EventDateTime = EventDateTime.Create(startDateTime, endDateTime),
-                Location = EventLocation.Create(venue, address, city, country),
-                Capacity = EventCapacity.Create(capacity),
-                EventType = eventType,
                 CategoryId = categoryId,
             };
+
+            // Set value objects through properties
+            eventEntity.EventDateTime = EventDateTime.Create(startDateTime, endDateTime);
+            eventEntity.Location = EventLocation.Create(venue, address, city, country);
+            eventEntity.Capacity = EventCapacity.Create(capacity);
+            eventEntity.EventType = eventType;
 
             // Raise domain event
             eventEntity.AddDomainEvent(new EventCreatedEvent(
@@ -114,7 +144,7 @@ namespace EventManagementSystem.Domain.Entities
             string? city,
             string? country,
             int capacity,
-            EventType eventType,
+            string eventType,
             int categoryId,
             DateTime createdAt)
         {
@@ -122,11 +152,15 @@ namespace EventManagementSystem.Domain.Entities
             {
                 Title = title,
                 Description = description,
-                EventDateTime = EventDateTime.CreateForExisting(startDateTime, endDateTime),
-                Location = EventLocation.Create(venue, address, city, country),
-                Capacity = EventCapacity.Create(capacity),
-                EventType = eventType,
                 CategoryId = categoryId,
+                _startDateTime = startDateTime,
+                _endDateTime = endDateTime,
+                _venue = venue,
+                _address = address,
+                _city = city,
+                _country = country,
+                _capacity = capacity,
+                _eventType = eventType,
             };
 
             // Set base entity properties

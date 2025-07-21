@@ -1,13 +1,9 @@
-﻿// <copyright file="EventCategoryConfiguration.cs" company="Ascentic">
-// Copyright (c) Ascentic. All rights reserved.
-// </copyright>
+﻿using EventManagementSystem.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace EventManagementSystem.Persistence.Configurations
 {
-    using EventManagementSystem.Domain.Entities;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
     public class EventCategoryConfiguration : IEntityTypeConfiguration<EventCategory>
     {
         public void Configure(EntityTypeBuilder<EventCategory> builder)

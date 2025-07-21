@@ -4,9 +4,10 @@
 
 namespace EventManagementSystem.Domain.ValueObjects
 {
+    using EventManagementSystem.Domain.Common;
+
     public sealed class EventType : ValueObject
     {
-        // Add ALL the missing types from the enum
         public static readonly EventType Conference = new ("Conference");
         public static readonly EventType Workshop = new ("Workshop");
         public static readonly EventType Seminar = new ("Seminar");

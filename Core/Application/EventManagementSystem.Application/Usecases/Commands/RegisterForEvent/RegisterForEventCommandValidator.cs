@@ -1,4 +1,4 @@
-﻿// <copyright file="RegisterForCommandValidator.cs" company="Ascentic">
+﻿// <copyright file="RegisterForEventCommandValidator.cs" company="Ascentic">
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 

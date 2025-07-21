@@ -4,8 +4,17 @@
 
 namespace EventManagementSystem.Domain.ValueObjects
 {
+    using EventManagementSystem.Domain.Common;
+
     public sealed class EventLocation : ValueObject
     {
+        // Private parameterless constructor for EF Core
+        private EventLocation()
+        {
+            this.Venue = string.Empty;
+            this.Address = string.Empty;
+        }
+
         private EventLocation(string venue, string address, string? city = null, string? country = null)
         {
             this.Venue = venue;

@@ -4,8 +4,7 @@
 
 namespace EventManagementSystem.Domain.ValueObjects
 {
-    using System;
-    using System.Collections.Generic;
+    using EventManagementSystem.Domain.Common;
 
     public sealed class RegistrationId : ValueObject
     {
@@ -35,7 +34,7 @@ namespace EventManagementSystem.Domain.ValueObjects
             return new RegistrationId(value);
         }
 
-        public static RegistrationId CreateNew() => new (0);
+        public static RegistrationId CreateNew() => new(0);
 
         public override string ToString() => this.Value.ToString();
 

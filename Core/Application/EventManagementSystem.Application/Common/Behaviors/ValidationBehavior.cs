@@ -36,19 +36,21 @@ namespace EventManagementSystem.Application.Common.Behaviors
 
             if (failures.Length > 0)
             {
+                // Convert string errors to Error objects
+                var errors = failures.Select(f => Error.Validation("Validation.Failed", f)).ToArray();
+
                 // If response is Result<T>, return failure result
                 if (typeof(TResponse).IsGenericType && typeof(TResponse).GetGenericTypeDefinition() == typeof(Result<>))
                 {
                     var resultType = typeof(TResponse).GetGenericArguments()[0];
-                    var failureMethod = typeof(Result).GetMethod(nameof(Result.Failure), 1, new[] { typeof(IEnumerable<string>) });
-                    var genericFailureMethod = failureMethod!.MakeGenericMethod(resultType);
-                    return (TResponse)genericFailureMethod.Invoke(null, new object[] { failures }) !;
+                    var failureMethod = typeof(Result<>).MakeGenericType(resultType).GetMethod(nameof(Result<object>.Failure), new[] { typeof(Error[]) });
+                    return (TResponse)failureMethod!.Invoke(null, new object[] { errors })!;
                 }
 
                 // If response is Result, return failure result
                 if (typeof(TResponse) == typeof(Result))
                 {
-                    return (TResponse)(object)Result.Failure(failures);
+                    return (TResponse)(object)Result.Failure(errors);
                 }
 
                 // Otherwise throw validation exception

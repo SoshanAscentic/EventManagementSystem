@@ -49,32 +49,39 @@ namespace EventManagementSystem.Application.Common.Models
 
         public static implicit operator Result(Error error) => Failure(error);
 
-        public static Result Success() => new (true, Error.None);
+        public static Result Success() => new(true, Error.None);
 
-        public static Result Failure(Error error) => new (false, error);
+        public static Result Failure(Error error) => new(false, error);
 
-        public static Result Failure(Error[] errors) => new (false, errors);
+        public static Result Failure(Error[] errors) => new(false, errors);
 
-        public static Result Failure(string code, string message) => new (false, Error.Failure(code, message));
+        public static Result Failure(string code, string message) => new(false, Error.Failure(code, message));
+
+        // Helper method for validation failures from string array
+        public static Result Failure(IEnumerable<string> errors) =>
+            new(false, errors.Select(e => Error.Validation("Validation.Failed", e)).ToArray());
 
         // Specific error type methods
         public static Result ValidationFailure(string code, string message) =>
-            new (false, Error.Validation(code, message));
+            new(false, Error.Validation(code, message));
+
+        public static Result ValidationFailure(IEnumerable<string> errors) =>
+            new(false, errors.Select(e => Error.Validation("Validation.Failed", e)).ToArray());
 
         public static Result NotFound(string code, string message) =>
-            new (false, Error.NotFound(code, message));
+            new(false, Error.NotFound(code, message));
 
         public static Result Conflict(string code, string message) =>
-            new (false, Error.Conflict(code, message));
+            new(false, Error.Conflict(code, message));
 
         public static Result Unauthorized(string code, string message) =>
-            new (false, Error.Unauthorized(code, message));
+            new(false, Error.Unauthorized(code, message));
 
         public static Result Forbidden(string code, string message) =>
-            new (false, Error.Forbidden(code, message));
+            new(false, Error.Forbidden(code, message));
 
         public static Result BadRequest(string code, string message) =>
-            new (false, Error.BadRequest(code, message));
+            new(false, Error.BadRequest(code, message));
 
         // Backward compatibility methods
         public string GetErrorMessage() => this.Error.Message;
@@ -111,32 +118,39 @@ namespace EventManagementSystem.Application.Common.Models
 
         public static implicit operator Result<T>(Error error) => Failure(error);
 
-        public static Result<T> Success(T value) => new (value, true, Error.None);
+        public static Result<T> Success(T value) => new(value, true, Error.None);
 
-        public static new Result<T> Failure(Error error) => new (default, false, error);
+        public static new Result<T> Failure(Error error) => new(default, false, error);
 
-        public static new Result<T> Failure(Error[] errors) => new (default, false, errors);
+        public static new Result<T> Failure(Error[] errors) => new(default, false, errors);
 
         public static new Result<T> Failure(string code, string message) =>
-            new (default, false, Error.Failure(code, message));
+            new(default, false, Error.Failure(code, message));
+
+        // Helper method for validation failures from string array
+        public static new Result<T> Failure(IEnumerable<string> errors) =>
+            new(default, false, errors.Select(e => Error.Validation("Validation.Failed", e)).ToArray());
 
         public static new Result<T> ValidationFailure(string code, string message) =>
-            new (default, false, Error.Validation(code, message));
+            new(default, false, Error.Validation(code, message));
+
+        public static new Result<T> ValidationFailure(IEnumerable<string> errors) =>
+            new(default, false, errors.Select(e => Error.Validation("Validation.Failed", e)).ToArray());
 
         public static new Result<T> NotFound(string code, string message) =>
-            new (default, false, Error.NotFound(code, message));
+            new(default, false, Error.NotFound(code, message));
 
         public static new Result<T> Conflict(string code, string message) =>
-            new (default, false, Error.Conflict(code, message));
+            new(default, false, Error.Conflict(code, message));
 
         public static new Result<T> Unauthorized(string code, string message) =>
-            new (default, false, Error.Unauthorized(code, message));
+            new(default, false, Error.Unauthorized(code, message));
 
         public static new Result<T> Forbidden(string code, string message) =>
-            new (default, false, Error.Forbidden(code, message));
+            new(default, false, Error.Forbidden(code, message));
 
         public static new Result<T> BadRequest(string code, string message) =>
-            new (default, false, Error.BadRequest(code, message));
+            new(default, false, Error.BadRequest(code, message));
 
         // Functional programming methods
         public Result<TNew> Map<TNew>(Func<T, TNew> mapper)

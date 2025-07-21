@@ -1,4 +1,4 @@
-﻿// <copyright file="GetCategoryQuery.cs" company="Ascentic">
+﻿// <copyright file="GetCategoriesQuery.cs" company="Ascentic">
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 

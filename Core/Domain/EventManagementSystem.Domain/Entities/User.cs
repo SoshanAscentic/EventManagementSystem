@@ -11,32 +11,41 @@ namespace EventManagementSystem.Domain.Entities
 
     public class User : BaseEntity, IAggregateRoot
     {
-        private readonly List<EventRegistration> registrations = new ();
+        private readonly List<EventRegistration> registrations = new();
 
         // Private constructor for EF Core
         private User()
         {
-            this.Email = null!; // Will be set by EF Core
+            this._email = string.Empty;
             this.FirstName = string.Empty;
             this.LastName = string.Empty;
         }
 
-        // Value Objects
-        public UserId UserId => this.Id > 0 ? UserId.Create(this.Id) : UserId.CreateNew();
+        // Backing fields for value objects
+        private string _email;
+        private string? _phone;
 
-        public Email Email { get; private set; }
-
+        // Properties that EF Core will map directly
         public string FirstName { get; private set; }
-
         public string LastName { get; private set; }
 
-        public Phone? Phone { get; private set; }
+        // Value object properties with backing fields
+        public Email Email
+        {
+            get => Email.Create(this._email);
+            private set => this._email = value.Value;
+        }
+
+        public Phone? Phone
+        {
+            get => string.IsNullOrEmpty(this._phone) ? null : Phone.Create(this._phone);
+            private set => this._phone = value?.Value;
+        }
 
         // Computed Properties
+        public UserId UserId => this.Id > 0 ? UserId.Create(this.Id) : UserId.CreateNew();
         public string FullName => $"{this.FirstName} {this.LastName}".Trim();
-
         public IReadOnlyCollection<EventRegistration> Registrations => this.registrations.AsReadOnly();
-
         public int ActiveRegistrationsCount => this.registrations.Count(r => r.Status.IsActive);
 
         // Factory method for creating new users
@@ -44,11 +53,13 @@ namespace EventManagementSystem.Domain.Entities
         {
             var user = new User
             {
-                Email = Email.Create(email),
                 FirstName = ValidateAndTrimName(firstName, nameof(firstName)),
                 LastName = ValidateAndTrimName(lastName, nameof(lastName)),
-                Phone = string.IsNullOrWhiteSpace(phone) ? null : Phone.Create(phone),
             };
+
+            // Set value objects through properties
+            user.Email = Email.Create(email);
+            user.Phone = string.IsNullOrWhiteSpace(phone) ? null : Phone.Create(phone);
 
             // Raise domain event
             user.AddDomainEvent(new UserCreatedEvent(user.UserId, user.Email, user.FullName));
@@ -61,10 +72,10 @@ namespace EventManagementSystem.Domain.Entities
         {
             var user = new User
             {
-                Email = Email.Create(email),
                 FirstName = firstName,
                 LastName = lastName,
-                Phone = string.IsNullOrWhiteSpace(phone) ? null : Phone.Create(phone),
+                _email = email,
+                _phone = phone,
             };
 
             // Set base entity properties

@@ -13,35 +13,49 @@ namespace EventManagementSystem.Domain.Entities
         // Private Constructor for EF Core
         private EventRegistration()
         {
-            this.EventId = null!;
-            this.UserId = null!;
-            this.Status = null!;
+            this._eventId = 0;
+            this._userId = 0;
+            this._status = "Registered";
         }
 
+        // Backing fields for value objects
+        private int _eventId;
+        private int _userId;
+        private string _status;
+
+        // Properties that EF Core will map directly
+        public DateTime RegisteredAt { get; private set; }
+        public DateTime? CancelledAt { get; private set; }
+        public string? Notes { get; private set; }
+
+        // Value object properties with backing fields
         public RegistrationId RegistrationId => this.Id > 0 ? RegistrationId.Create(this.Id) : RegistrationId.CreateNew();
 
-        public EventId EventId { get; private set; }
+        public EventId EventId
+        {
+            get => EventId.Create(this._eventId);
+            private set => this._eventId = value.Value;
+        }
 
-        public UserId UserId { get; private set; }
+        public UserId UserId
+        {
+            get => UserId.Create(this._userId);
+            private set => this._userId = value.Value;
+        }
 
-        public DateTime RegisteredAt { get; private set; }
-
-        public DateTime? CancelledAt { get; private set; }
-
-        public RegistrationStatus Status { get; private set; }
-
-        public string? Notes { get; private set; }
+        public RegistrationStatus Status
+        {
+            get => RegistrationStatus.Create(this._status);
+            private set => this._status = value.Value;
+        }
 
         // Navigation Properties
         public Event? Event { get; private set; }
-
         public User? User { get; private set; }
 
         // Business Properties
         public bool IsActive => this.Status.IsActive;
-
         public bool IsCancelled => this.Status.IsCancelled;
-
         public TimeSpan? RegistrationDuration => this.CancelledAt?.Subtract(this.RegisteredAt);
 
         // Factory method for creating new registrations
@@ -49,12 +63,14 @@ namespace EventManagementSystem.Domain.Entities
         {
             var registration = new EventRegistration
             {
-                EventId = eventId,
-                UserId = userId,
                 RegisteredAt = DateTime.UtcNow,
-                Status = RegistrationStatus.Registered,
                 Notes = notes?.Trim(),
             };
+
+            // Set value objects through properties
+            registration.EventId = eventId;
+            registration.UserId = userId;
+            registration.Status = RegistrationStatus.Registered;
 
             // Raise domain event
             registration.AddDomainEvent(new UserRegisteredForEventEvent(
@@ -76,11 +92,11 @@ namespace EventManagementSystem.Domain.Entities
         {
             var registration = new EventRegistration
             {
-                EventId = EventId.Create(eventId),
-                UserId = UserId.Create(userId),
+                _eventId = eventId,
+                _userId = userId,
                 RegisteredAt = registeredAt,
                 CancelledAt = cancelledAt,
-                Status = RegistrationStatus.Create(status),
+                _status = status,
                 Notes = notes,
             };
 

@@ -7,21 +7,14 @@ namespace EventManagementSystem.Persistence.Context
     using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Domain.Common;
     using EventManagementSystem.Domain.Entities;
+    using EventManagementSystem.Persistence.Configurations;
     using Microsoft.EntityFrameworkCore;
 
     public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
-        private readonly IDomainEventDispatcher domainEventDispatcher;
-        private readonly ICurrentUserService currentUserService;
-
-        public ApplicationDbContext(
-            DbContextOptions<ApplicationDbContext> options,
-            IDomainEventDispatcher domainEventDispatcher,
-            ICurrentUserService currentUserService)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
-            this.domainEventDispatcher = domainEventDispatcher;
-            this.currentUserService = currentUserService;
         }
 
         public DbSet<Event> Events { get; set; } = null!;
@@ -38,14 +31,10 @@ namespace EventManagementSystem.Persistence.Context
         {
             try
             {
-                // Handle domain events before saving
-                await this.DispatchDomainEventsAsync(cancellationToken);
-
-                // Apply audit information
+                // Apply audit information before saving
                 this.ApplyAuditInformation();
 
                 var result = await base.SaveChangesAsync(cancellationToken);
-
                 return result;
             }
             catch (DbUpdateConcurrencyException ex)
@@ -58,46 +47,30 @@ namespace EventManagementSystem.Persistence.Context
         {
             base.OnModelCreating(modelBuilder);
 
-            // Apply all entity configurations
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+            // Apply all configurations
+            modelBuilder.ApplyConfiguration(new EventConfiguration());
+            modelBuilder.ApplyConfiguration(new EventCategoryConfiguration());
+            modelBuilder.ApplyConfiguration(new UserConfiguration());
+            modelBuilder.ApplyConfiguration(new EventRegistrationConfiguration());
+            modelBuilder.ApplyConfiguration(new EventImageConfiguration());
 
-            // Apply performance optimizations
-            modelBuilder.ApplyPerformanceOptimizations();
-
-            // Apply naming conventions
-            modelBuilder.ApplyNamingConventions();
+            // Apply any additional constraints
+            this.ConfigureAdditionalConstraints(modelBuilder);
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        private void ConfigureAdditionalConstraints(ModelBuilder modelBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                // Add interceptors
-                optionsBuilder.AddInterceptors(
-                    new DomainEventInterceptor(this.domainEventDispatcher),
-                    new AuditInterceptor(this.currentUserService));
-            }
-        }
+            // Ensure event dates are logical - using the correct column names
+            modelBuilder.Entity<Event>()
+                .HasCheckConstraint("CK_Events_DateRange", "[EndDateTime] > [StartDateTime]");
 
-        private async Task DispatchDomainEventsAsync(CancellationToken cancellationToken)
-        {
-            var aggregateRoots = this.ChangeTracker.Entries<IAggregateRoot>()
-                .Where(e => e.Entity.DomainEvents.Any())
-                .Select(e => e.Entity)
-                .ToList();
+            // Ensure capacity is positive - using the correct column name
+            modelBuilder.Entity<Event>()
+                .HasCheckConstraint("CK_Events_PositiveCapacity", "[Capacity] > 0");
 
-            var domainEvents = aggregateRoots
-                .SelectMany(ar => ar.DomainEvents)
-                .ToList();
-
-            // Clear domain events before dispatching to prevent infinite loops
-            aggregateRoots.ForEach(ar => ar.ClearDomainEvents());
-
-            // Dispatch all domain events
-            foreach (var domainEvent in domainEvents)
-            {
-                await this.domainEventDispatcher.DispatchAsync(domainEvent, cancellationToken);
-            }
+            // Ensure file size is positive
+            modelBuilder.Entity<EventImage>()
+                .HasCheckConstraint("CK_EventImages_PositiveFileSize", "[FileSize] > 0");
         }
 
         private void ApplyAuditInformation()

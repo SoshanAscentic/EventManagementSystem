@@ -2,19 +2,19 @@
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 
-namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
+namespace EventManagementSystem.Application.Usecases.Queries.GetEvent
 {
     using AutoMapper;
     using EventManagementSystem.Application.Common.Constants;
     using EventManagementSystem.Application.Common.Models;
     using EventManagementSystem.Application.DTOs;
-    using EventManagementSystem.Application.Usecases.Queries.GetEvent;
+    using EventManagementSystem.Application.Usecases.Queries.GetEvents;
     using EventManagementSystem.Domain.Repositories;
     using EventManagementSystem.Domain.ValueObjects;
     using MediatR;
     using Microsoft.Extensions.Logging;
 
-    public class GetEventsQueryHandler : IRequestHandler<GetEventQuery, Result<EventDto>>
+    public class GetEventsQueryHandler : IRequestHandler<GetEventsQuery, Result<PagedResult<EventDto>>>
     {
         private readonly IEventRepository eventRepository;
         private readonly IMapper mapper;
@@ -30,34 +30,55 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
             this.logger = logger;
         }
 
-        public async Task<Result<EventDto>> Handle(GetEventQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedResult<EventDto>>> Handle(GetEventsQuery request, CancellationToken cancellationToken)
         {
             try
             {
-                this.logger.LogInformation("Getting event: {EventId}", request.Id);
+                this.logger.LogInformation(
+                    "Getting events with filters - SearchTerm: {SearchTerm}, CategoryId: {CategoryId}, Page: {Page}",
+                    request.SearchTerm,
+                    request.CategoryId,
+                    request.PageNumber);
 
-                var eventEntity = await this.eventRepository.GetByIdWithAllDetailsAsync(
-                    Domain.ValueObjects.EventId.Create(request.Id),
-                    cancellationToken);
-
-                if (eventEntity == null)
+                EventType? eventType = null;
+                if (!string.IsNullOrEmpty(request.EventType))
                 {
-                    this.logger.LogWarning("Event not found: {EventId}", request.Id);
-                    return DomainErrors.Event.NotFound(request.Id);
+                    eventType = EventType.Create(request.EventType);
                 }
 
-                var eventDto = this.mapper.Map<EventDto>(eventEntity);
-                this.logger.LogInformation("Successfully retrieved event: {EventId}", request.Id);
-                return eventDto;
+                var (events, totalCount) = await this.eventRepository.SearchEventsAsync(
+                    request.SearchTerm,
+                    request.CategoryId,
+                    eventType,
+                    request.StartDate,
+                    request.EndDate,
+                    request.Location,
+                    request.HasAvailableSpots,
+                    request.PageNumber,
+                    request.PageSize,
+                    request.SortBy,
+                    request.Ascending,
+                    cancellationToken);
+
+                var eventDtos = this.mapper.Map<List<EventDto>>(events);
+                var pagedResult = new PagedResult<EventDto>(eventDtos, totalCount, request.PageNumber, request.PageSize);
+
+                this.logger.LogInformation("Successfully retrieved {Count} events out of {Total}", events.Count, totalCount);
+                return pagedResult;
             }
-            catch (ArgumentException ex) when (ex.Message.Contains("ID"))
+            catch (ArgumentException ex) when (ex.Message.Contains("event type"))
             {
-                this.logger.LogWarning(ex, "Invalid event ID provided: {EventId}", request.Id);
-                return DomainErrors.General.InvalidId("Event");
+                this.logger.LogWarning(ex, "Invalid event type provided: {EventType}", request.EventType);
+                return DomainErrors.Event.InvalidEventType(request.EventType ?? string.Empty);
+            }
+            catch (ArgumentException ex) when (ex.Message.Contains("page"))
+            {
+                this.logger.LogWarning(ex, "Invalid pagination parameters");
+                return DomainErrors.General.ValidationFailed("Invalid pagination parameters");
             }
             catch (Exception ex)
             {
-                this.logger.LogError(ex, "Unexpected error getting event: {EventId}", request.Id);
+                this.logger.LogError(ex, "Unexpected error getting events");
                 return DomainErrors.General.UnexpectedError();
             }
         }

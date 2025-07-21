@@ -4,6 +4,8 @@
 
 namespace EventManagementSystem.Domain.ValueObjects
 {
+    using EventManagementSystem.Domain.Common;
+
     public sealed class RegistrationStatus : ValueObject
     {
         public static readonly RegistrationStatus Registered = new ("Registered");

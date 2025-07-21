@@ -4,9 +4,8 @@
 
 namespace EventManagementSystem.Domain.ValueObjects
 {
-    using System;
-    using System.Collections.Generic;
     using System.Text.RegularExpressions;
+    using EventManagementSystem.Domain.Common;
 
     public sealed class Phone : ValueObject
     {

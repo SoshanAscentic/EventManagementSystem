@@ -18,30 +18,22 @@ namespace EventManagementSystem.Persistence.Configurations
             // Primary key
             builder.HasKey(r => r.Id);
 
-            // Value Object configurations
-            builder.OwnsOne(r => r.EventId, eid =>
-            {
-                eid.Property(x => x.Value)
-                    .HasColumnName("EventId")
-                    .IsRequired();
-            });
+            // Map backing fields directly instead of using owned types
+            builder.Property("_eventId")
+                .HasColumnName("EventId")
+                .IsRequired();
 
-            builder.OwnsOne(r => r.UserId, uid =>
-            {
-                uid.Property(x => x.Value)
-                    .HasColumnName("UserId")
-                    .IsRequired();
-            });
+            builder.Property("_userId")
+                .HasColumnName("UserId")
+                .IsRequired();
 
-            builder.OwnsOne(r => r.Status, s =>
-            {
-                s.Property(x => x.Value)
-                    .HasColumnName("Status")
-                    .HasMaxLength(20)
-                    .IsRequired();
-            });
+            builder.Property("_status")
+                .HasColumnName("Status")
+                .HasMaxLength(20)
+                .IsRequired()
+                .HasDefaultValue("Registered");
 
-            // Properties
+            // Basic properties
             builder.Property(r => r.RegisteredAt)
                 .IsRequired();
 
@@ -56,37 +48,41 @@ namespace EventManagementSystem.Persistence.Configurations
             builder.Property(r => r.UpdatedAt)
                 .IsRequired();
 
-            // Relationships
+            // Relationships using backing fields
             builder.HasOne(r => r.Event)
                 .WithMany(e => e.Registrations)
-                .HasForeignKey("EventId")
+                .HasForeignKey("_eventId")
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(r => r.User)
                 .WithMany(u => u.Registrations)
-                .HasForeignKey("UserId")
+                .HasForeignKey("_userId")
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes
-            builder.HasIndex("EventId")
+            builder.HasIndex("_eventId")
                 .HasDatabaseName("IX_EventRegistrations_EventId");
 
-            builder.HasIndex("UserId")
+            builder.HasIndex("_userId")
                 .HasDatabaseName("IX_EventRegistrations_UserId");
 
-            builder.HasIndex(r => r.Status)
+            builder.HasIndex("_status")
                 .HasDatabaseName("IX_EventRegistrations_Status");
 
             builder.HasIndex(r => r.RegisteredAt)
                 .HasDatabaseName("IX_EventRegistrations_RegisteredAt");
 
-            builder.HasIndex("EventId", "UserId")
+            // Unique constraint for active registrations
+            builder.HasIndex("_eventId", "_userId")
                 .IsUnique()
-                .HasDatabaseName("IX_EventRegistrations_EventId_UserId")
+                .HasDatabaseName("IX_EventRegistrations_EventId_UserId_Unique")
                 .HasFilter("[Status] = 'Registered'");
 
-            // Ignore computed properties
+            // Ignore computed properties, value objects, and domain events
             builder.Ignore(r => r.RegistrationId);
+            builder.Ignore(r => r.EventId);
+            builder.Ignore(r => r.UserId);
+            builder.Ignore(r => r.Status);
             builder.Ignore(r => r.IsActive);
             builder.Ignore(r => r.IsCancelled);
             builder.Ignore(r => r.RegistrationDuration);

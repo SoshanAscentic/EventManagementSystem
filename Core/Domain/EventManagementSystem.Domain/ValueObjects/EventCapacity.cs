@@ -4,10 +4,18 @@
 
 namespace EventManagementSystem.Domain.ValueObjects
 {
+    using EventManagementSystem.Domain.Common;
+
     public sealed class EventCapacity : ValueObject
     {
         public const int MinCapacity = 1;
         public const int MaxCapacity = 10000;
+
+        // Private parameterless constructor for EF Core
+        private EventCapacity()
+        {
+            this.Value = 1;
+        }
 
         private EventCapacity(int value)
         {

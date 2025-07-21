@@ -5,6 +5,7 @@
 namespace EventManagementSystem.Domain.ValueObjects
 {
     using System.Text.RegularExpressions;
+    using EventManagementSystem.Domain.Common;
 
     public sealed class Email : ValueObject
     {

@@ -4,8 +4,17 @@
 
 namespace EventManagementSystem.Domain.ValueObjects
 {
+    using EventManagementSystem.Domain.Common;
+
     public sealed class EventDateTime : ValueObject
     {
+        // Private parameterless constructor for EF Core
+        private EventDateTime()
+        {
+            this.StartDateTime = default;
+            this.EndDateTime = default;
+        }
+
         private EventDateTime(DateTime startDateTime, DateTime endDateTime)
         {
             this.StartDateTime = startDateTime;
