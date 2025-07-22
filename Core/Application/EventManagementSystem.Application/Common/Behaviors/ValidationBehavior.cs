@@ -44,7 +44,7 @@ namespace EventManagementSystem.Application.Common.Behaviors
                 {
                     var resultType = typeof(TResponse).GetGenericArguments()[0];
                     var failureMethod = typeof(Result<>).MakeGenericType(resultType).GetMethod(nameof(Result<object>.Failure), new[] { typeof(Error[]) });
-                    return (TResponse)failureMethod!.Invoke(null, new object[] { errors })!;
+                    return (TResponse)failureMethod!.Invoke(null, new object[] { errors }) !;
                 }
 
                 // If response is Result, return failure result

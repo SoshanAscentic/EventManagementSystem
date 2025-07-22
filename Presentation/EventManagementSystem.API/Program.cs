@@ -1,51 +1,55 @@
+using EventManagementSystem.API.Extensions;
 using EventManagementSystem.Application;
+using EventManagementSystem.Identity;
 using EventManagementSystem.Persistence;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container
-builder.Services.AddControllers(); // THIS WAS MISSING!
-
-// Add your custom services
-builder.Services.AddApplication();
-builder.Services.AddPersistence(builder.Configuration);
-
-// Add API documentation
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+internal class Program
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    app.UseDeveloperExceptionPage();
+    private static async Task Main(string[] args)
 
-    // Database initialization
-    using (var scope = app.Services.CreateScope())
+
+
+
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("Starting database initialization...");
+        var builder = WebApplication.CreateBuilder(args);
 
-        try
+        // Configure Serilog
+        builder.Host.UseSerilog((context, configuration) =>
         {
-            await app.Services.InitializeDatabaseAsync();
-            logger.LogInformation("Database initialization completed successfully");
-        }
-        catch (Exception ex)
+            configuration
+                .ReadFrom.Configuration(context.Configuration)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .WriteTo.Seq(context.Configuration.GetConnectionString("Seq") ?? "http://localhost:5341");
+        });
+
+        // Add services to the container
+        builder.Services.AddApplication();
+        builder.Services.AddPersistence(builder.Configuration);
+        builder.Services.AddIdentityServices(builder.Configuration);
+
+        // Add API services
+        builder.Services.AddApiServices(builder.Configuration);
+        builder.Services.AddAuthenticationServices(builder.Configuration);
+        builder.Services.AddSwaggerServices();
+        builder.Services.AddSignalRServices();
+        //builder.Services.AddHealthCheckServices(builder.Configuration);
+        builder.Services.AddRateLimitingServices();
+
+        var app = builder.Build();
+
+        // Configure the HTTP request pipeline
+        await app.ConfigureApplicationAsync();
+
+        // Initialize database and identity
+        using (var scope = app.Services.CreateScope())
         {
-            logger.LogError(ex, "Database initialization failed");
-            throw;
+            await scope.ServiceProvider.InitializeDatabaseAsync();
+            await scope.ServiceProvider.InitializeIdentityAsync();
         }
+
+        app.Run();
     }
 }
-
-app.UseHttpsRedirection();
-app.UseRouting();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();

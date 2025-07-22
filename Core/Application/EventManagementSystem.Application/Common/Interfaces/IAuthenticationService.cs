@@ -2,10 +2,10 @@
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 
-namespace EventManagementSystem.Identity.Interfaces
+namespace EventManagementSystem.Application.Common.Interfaces
 {
     using EventManagementSystem.Application.Common.Models;
-    using EventManagementSystem.Identity.Models;
+    using EventManagementSystem.Application.DTOs;
 
     public interface IAuthenticationService
     {

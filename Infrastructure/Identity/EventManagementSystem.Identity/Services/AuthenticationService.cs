@@ -5,12 +5,13 @@
 namespace EventManagementSystem.Identity.Services
 {
     using EventManagementSystem.Application.Common.Constants;
+    using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Application.Common.Models;
+    using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Domain.Repositories;
     using EventManagementSystem.Identity.Context;
     using EventManagementSystem.Identity.Entities;
     using EventManagementSystem.Identity.Interfaces;
-    using EventManagementSystem.Identity.Models;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
