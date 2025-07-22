@@ -35,7 +35,6 @@ namespace EventManagementSystem.Application
             // Register custom application services
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
             services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IUserSynchronizationService, UserSynchronizationService>();
 
             return services;
         }

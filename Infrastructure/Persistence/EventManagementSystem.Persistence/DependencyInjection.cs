@@ -8,6 +8,7 @@ namespace EventManagementSystem.Persistence
     using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Domain.Repositories;
     using EventManagementSystem.Persistence.Context;
+    using EventManagementSystem.Persistence.Interceptors;
     using EventManagementSystem.Persistence.Repositories;
     using EventManagementSystem.Persistence.Services;
     using EventManagementSystem.Persistence.UoW;
@@ -20,8 +21,12 @@ namespace EventManagementSystem.Persistence
     {
         public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
         {
+            // Register interceptors
+            services.AddScoped<AuditInterceptor>();
+            services.AddScoped<DomainEventInterceptor>();
+
             // Database Context
-            services.AddDbContext<ApplicationDbContext>(options =>
+            services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
             {
                 var connectionString = configuration.GetConnectionString("DefaultConnection");
                 options.UseSqlServer(connectionString, sqlOptions =>
@@ -35,15 +40,17 @@ namespace EventManagementSystem.Persistence
                     sqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
                 });
 
+                // Add interceptors
+                options.AddInterceptors(
+                    serviceProvider.GetRequiredService<AuditInterceptor>(),
+                    serviceProvider.GetRequiredService<DomainEventInterceptor>());
+
                 // Enable detailed errors in development
                 if (configuration.GetValue<bool>("DetailedErrors"))
                 {
                     options.EnableDetailedErrors();
                     options.EnableSensitiveDataLogging();
                 }
-
-                // Configure query logging
-                options.LogTo(Console.WriteLine, LogLevel.Information);
             });
 
             // Application DbContext Interface
@@ -59,6 +66,11 @@ namespace EventManagementSystem.Persistence
             services.AddScoped<IEventRegistrationRepository, EventRegistrationRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
 
+            // Services
+            services.AddScoped<IStatisticsService, StatisticsService>();
+            services.AddScoped<IFileStorageService, AzureBlobStorageService>();
+            services.AddScoped<ICacheService, CacheService>();
+
             // Azure Blob Storage
             services.AddSingleton(serviceProvider =>
             {
@@ -66,11 +78,8 @@ namespace EventManagementSystem.Persistence
                 return new BlobServiceClient(connectionString);
             });
 
-            services.AddScoped<IFileStorageService, AzureBlobStorageService>();
-
-            // Cache Service (if using Redis or in-memory cache)
+            // Cache Service
             services.AddMemoryCache();
-            services.AddScoped<ICacheService, CacheService>();
 
             // Database Seeder
             services.AddScoped<DatabaseSeeder>();
