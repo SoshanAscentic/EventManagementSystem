@@ -10,14 +10,15 @@ namespace EventManagementSystem.Domain.Entities
 
     public class Event : BaseEntity, IAggregateRoot
     {
-        private readonly List<EventRegistration> registrations = new();
-        private readonly List<EventImage> images = new();
+        private readonly List<EventRegistration> registrations = new ();
+        private readonly List<EventImage> images = new ();
 
         // Private constructor for EF Core
         private Event()
         {
             this.Title = string.Empty;
             this.Description = string.Empty;
+
             // Initialize backing fields with default values
             this._startDateTime = DateTime.UtcNow;
             this._endDateTime = DateTime.UtcNow.AddHours(1);
@@ -39,7 +40,9 @@ namespace EventManagementSystem.Domain.Entities
 
         // Properties that EF Core will map directly
         public string Title { get; private set; }
+
         public string Description { get; private set; }
+
         public int CategoryId { get; private set; }
 
         // Owned type properties with proper backing
@@ -82,17 +85,26 @@ namespace EventManagementSystem.Domain.Entities
 
         // Navigation Properties
         public EventCategory? Category { get; private set; }
+
         public IReadOnlyCollection<EventRegistration> Registrations => this.registrations.AsReadOnly();
+
         public IReadOnlyCollection<EventImage> Images => this.images.AsReadOnly();
 
         // Business Properties
         public int CurrentRegistrations => this.registrations.Count(r => r.Status.IsActive);
+
         public bool IsFull => this.Capacity.IsFull(this.CurrentRegistrations);
+
         public int RemainingCapacity => this.Capacity.RemainingCapacity(this.CurrentRegistrations);
+
         public bool IsRegistrationOpen => this.EventDateTime.IsRegistrationOpen && !this.IsFull;
+
         public bool IsUpcoming => this.EventDateTime.IsUpcoming;
+
         public bool IsOngoing => this.EventDateTime.IsOngoing;
+
         public bool IsCompleted => this.EventDateTime.IsCompleted;
+
         public EventImage? PrimaryImage => this.images.FirstOrDefault(i => i.IsPrimary) ?? this.images.FirstOrDefault();
 
         // Factory method for creating new events

@@ -6,6 +6,8 @@ namespace EventManagementSystem.Application
 {
     using System.Reflection;
     using EventManagementSystem.Application.Common.Behaviors;
+    using EventManagementSystem.Application.Common.Interfaces;
+    using EventManagementSystem.Application.Common.Services;
     using FluentValidation;
     using MediatR;
     using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +31,11 @@ namespace EventManagementSystem.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
+
+            // Register custom application services
+            services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IUserSynchronizationService, UserSynchronizationService>();
 
             return services;
         }
