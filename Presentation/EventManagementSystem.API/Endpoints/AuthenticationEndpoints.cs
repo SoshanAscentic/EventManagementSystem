@@ -1,10 +1,14 @@
-﻿using EventManagementSystem.API.Models;
-using EventManagementSystem.Application.Common.Interfaces;
-using EventManagementSystem.Application.DTOs;
-using Microsoft.AspNetCore.Mvc;
+﻿// <copyright file="AuthenticationEndpoints.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
 
 namespace EventManagementSystem.API.Endpoints
 {
+    using EventManagementSystem.API.Models;
+    using EventManagementSystem.Application.Common.Interfaces;
+    using EventManagementSystem.Application.DTOs;
+    using Microsoft.AspNetCore.Mvc;
+
     public static class AuthenticationEndpoints
     {
         public static void MapAuthenticationEndpoints(this IEndpointRouteBuilder app)
@@ -207,6 +211,7 @@ namespace EventManagementSystem.API.Endpoints
             };
 
             context.Response.Cookies.Append("AccessToken", authResponse.AccessToken, cookieOptions);
+
             // Note: RefreshToken would be set if it was returned from the service
         }
 

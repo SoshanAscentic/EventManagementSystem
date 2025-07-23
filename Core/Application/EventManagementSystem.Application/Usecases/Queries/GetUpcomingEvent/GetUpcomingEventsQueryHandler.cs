@@ -6,6 +6,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetUpcomingEvent
 {
     using AutoMapper;
     using EventManagementSystem.Application.Common.Constants;
+    using EventManagementSystem.Application.Common.Extensions;
     using EventManagementSystem.Application.Common.Models;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Domain.Repositories;
@@ -15,16 +16,13 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetUpcomingEvent
     public class GetUpcomingEventsQueryHandler : IRequestHandler<GetUpcomingEventsQuery, Result<List<EventDto>>>
     {
         private readonly IEventRepository eventRepository;
-        private readonly IMapper mapper;
         private readonly ILogger<GetUpcomingEventsQueryHandler> logger;
 
         public GetUpcomingEventsQueryHandler(
             IEventRepository eventRepository,
-            IMapper mapper,
             ILogger<GetUpcomingEventsQueryHandler> logger)
         {
             this.eventRepository = eventRepository;
-            this.mapper = mapper;
             this.logger = logger;
         }
 
@@ -39,7 +37,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetUpcomingEvent
                     cancellationToken);
 
                 var limitedEvents = upcomingEvents.Take(request.Count).ToList();
-                var eventDtos = this.mapper.Map<List<EventDto>>(limitedEvents);
+                var eventDtos = limitedEvents.ToDto();
 
                 this.logger.LogInformation("Successfully retrieved {Count} upcoming events", eventDtos.Count);
                 return eventDtos;
@@ -47,12 +45,12 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetUpcomingEvent
             catch (ArgumentException ex) when (ex.Message.Contains("category"))
             {
                 this.logger.LogWarning(ex, "Invalid category ID provided: {CategoryId}", request.CategoryId);
-                return DomainErrors.Category.NotFound(request.CategoryId ?? 0);
+                return Result<List<EventDto>>.ValidationFailure("Category.InvalidId", $"Invalid category ID: {request.CategoryId}");
             }
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Unexpected error getting upcoming events");
-                return DomainErrors.General.UnexpectedError();
+                return Result<List<EventDto>>.Failure("General.UnexpectedError", "An unexpected error occurred while retrieving upcoming events");
             }
         }
     }

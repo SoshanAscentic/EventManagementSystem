@@ -19,16 +19,18 @@ namespace EventManagementSystem.Persistence.Repositories
 
         public async Task<User?> GetByIdAsync(UserId id, CancellationToken cancellationToken = default)
         {
+            // Fixed: Use the backing field instead of the value object property
             return await this.dbSet
-                .Include(u => u.Registrations.Where(r => r.Status.Value == "Registered"))
+                .Include(u => u.Registrations.Where(r => EF.Property<string>(r, "_status") == "Registered"))
                 .FirstOrDefaultAsync(u => u.Id == id.Value, cancellationToken);
         }
 
         public async Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default)
         {
+            // Fixed: Use the backing field for email comparison
             return await this.dbSet
-                .Include(u => u.Registrations.Where(r => r.Status.Value == "Registered"))
-                .FirstOrDefaultAsync(u => u.Email.Value == email.Value, cancellationToken);
+                .Include(u => u.Registrations.Where(r => EF.Property<string>(r, "_status") == "Registered"))
+                .FirstOrDefaultAsync(u => EF.Property<string>(u, "_email") == email.Value, cancellationToken);
         }
 
         public async Task<bool> ExistsAsync(UserId id, CancellationToken cancellationToken = default)
@@ -38,7 +40,8 @@ namespace EventManagementSystem.Persistence.Repositories
 
         public async Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default)
         {
-            return await this.dbSet.AnyAsync(u => u.Email.Value == email.Value, cancellationToken);
+            // Fixed: Use the backing field for email comparison
+            return await this.dbSet.AnyAsync(u => EF.Property<string>(u, "_email") == email.Value, cancellationToken);
         }
 
         public async Task<IReadOnlyList<User>> GetByNameAsync(string searchTerm, CancellationToken cancellationToken = default)
@@ -63,10 +66,11 @@ namespace EventManagementSystem.Persistence.Repositories
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
+                // Fixed: Use backing field for email search
                 query = query.Where(u =>
                     u.FirstName.Contains(searchTerm) ||
                     u.LastName.Contains(searchTerm) ||
-                    u.Email.Value.Contains(searchTerm) ||
+                    EF.Property<string>(u, "_email").Contains(searchTerm) ||
                     (u.FirstName + " " + u.LastName).Contains(searchTerm));
             }
 
@@ -85,9 +89,9 @@ namespace EventManagementSystem.Persistence.Repositories
         public async Task<IReadOnlyList<User>> GetUsersWithActiveRegistrationsAsync(CancellationToken cancellationToken = default)
         {
             return await this.dbSet
-                .Include(u => u.Registrations.Where(r => r.Status.Value == "Registered"))
+                .Include(u => u.Registrations.Where(r => EF.Property<string>(r, "_status") == "Registered"))
                     .ThenInclude(r => r.Event)
-                .Where(u => u.Registrations.Any(r => r.Status.Value == "Registered"))
+                .Where(u => u.Registrations.Any(r => EF.Property<string>(r, "_status") == "Registered"))
                 .OrderBy(u => u.LastName)
                 .ToListAsync(cancellationToken);
         }
@@ -95,8 +99,8 @@ namespace EventManagementSystem.Persistence.Repositories
         public async Task<IReadOnlyList<User>> GetUsersRegisteredForEventAsync(EventId eventId, CancellationToken cancellationToken = default)
         {
             return await this.dbSet
-                .Include(u => u.Registrations.Where(r => r.EventId.Value == eventId.Value && r.Status.Value == "Registered"))
-                .Where(u => u.Registrations.Any(r => r.EventId.Value == eventId.Value && r.Status.Value == "Registered"))
+                .Include(u => u.Registrations.Where(r => EF.Property<int>(r, "_eventId") == eventId.Value && EF.Property<string>(r, "_status") == "Registered"))
+                .Where(u => u.Registrations.Any(r => EF.Property<int>(r, "_eventId") == eventId.Value && EF.Property<string>(r, "_status") == "Registered"))
                 .OrderBy(u => u.LastName)
                 .ToListAsync(cancellationToken);
         }
@@ -112,8 +116,8 @@ namespace EventManagementSystem.Persistence.Repositories
         {
             var ids = userIds.Select(u => u.Value).ToList();
             return await this.context.EventRegistrations
-                .Where(r => ids.Contains(r.UserId.Value))
-                .GroupBy(r => r.UserId.Value)
+                .Where(r => ids.Contains(EF.Property<int>(r, "_userId")))
+                .GroupBy(r => EF.Property<int>(r, "_userId"))
                 .ToDictionaryAsync(g => UserId.Create(g.Key), g => g.Count(), cancellationToken);
         }
 
@@ -146,7 +150,7 @@ namespace EventManagementSystem.Persistence.Repositories
         {
             var emailValues = emails.Select(e => e.Value).ToList();
             return await this.dbSet
-                .Where(u => emailValues.Contains(u.Email.Value))
+                .Where(u => emailValues.Contains(EF.Property<string>(u, "_email")))
                 .ToDictionaryAsync(u => u.Email, u => u, cancellationToken);
         }
     }

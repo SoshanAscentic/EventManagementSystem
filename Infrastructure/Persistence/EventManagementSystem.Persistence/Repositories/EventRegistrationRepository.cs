@@ -30,7 +30,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .FirstOrDefaultAsync(r => r.UserId.Value == userId.Value && r.EventId.Value == eventId.Value, cancellationToken);
+                .FirstOrDefaultAsync(r => EF.Property<int>(r, "_userId") == userId.Value && EF.Property<int>(r, "_eventId") == eventId.Value, cancellationToken);
         }
 
         public async Task<bool> ExistsAsync(RegistrationId id, CancellationToken cancellationToken = default)
@@ -42,9 +42,9 @@ namespace EventManagementSystem.Persistence.Repositories
         {
             return await this.dbSet.AnyAsync(
                 r =>
-                r.UserId.Value == userId.Value &&
-                r.EventId.Value == eventId.Value &&
-                r.Status.Value == "Registered",
+                EF.Property<int>(r, "_userId") == userId.Value &&
+                EF.Property<int>(r, "_eventId") == eventId.Value &&
+                EF.Property<string>(r, "_status") == "Registered",
                 cancellationToken);
         }
 
@@ -53,7 +53,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.UserId.Value == userId.Value)
+                .Where(r => EF.Property<int>(r, "_userId") == userId.Value)
                 .OrderByDescending(r => r.RegisteredAt)
                 .ToListAsync(cancellationToken);
         }
@@ -63,7 +63,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.UserId.Value == userId.Value && r.Status.Value == "Registered")
+                .Where(r => EF.Property<int>(r, "_userId") == userId.Value && EF.Property<string>(r, "_status") == "Registered")
                 .OrderByDescending(r => r.RegisteredAt)
                 .ToListAsync(cancellationToken);
         }
@@ -74,7 +74,7 @@ namespace EventManagementSystem.Persistence.Repositories
                 .Include(r => r.Event)
                     .ThenInclude(e => e.Category)
                 .Include(r => r.User)
-                .Where(r => r.UserId.Value == userId.Value)
+                .Where(r => EF.Property<int>(r, "_userId") == userId.Value)
                 .OrderByDescending(r => r.RegisteredAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -86,7 +86,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.EventId.Value == eventId.Value)
+                .Where(r => EF.Property<int>(r, "_eventId") == eventId.Value)
                 .OrderByDescending(r => r.RegisteredAt)
                 .ToListAsync(cancellationToken);
         }
@@ -96,7 +96,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.EventId.Value == eventId.Value && r.Status.Value == "Registered")
+                .Where(r => EF.Property<int>(r, "_eventId") == eventId.Value && EF.Property<string>(r, "_status") == "Registered")
                 .OrderByDescending(r => r.RegisteredAt)
                 .ToListAsync(cancellationToken);
         }
@@ -106,7 +106,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.EventId.Value == eventId.Value && r.Status.Value == "Cancelled")
+                .Where(r => EF.Property<int>(r, "_eventId") == eventId.Value && EF.Property<string>(r, "_status") == "Cancelled")
                 .OrderByDescending(r => r.CancelledAt)
                 .ToListAsync(cancellationToken);
         }
@@ -115,8 +115,8 @@ namespace EventManagementSystem.Persistence.Repositories
         {
             return await this.dbSet.CountAsync(
                 r =>
-                r.EventId.Value == eventId.Value &&
-                r.Status.Value == "Registered",
+                EF.Property<int>(r, "_eventId") == eventId.Value &&
+                EF.Property<string>(r, "_status") == "Registered",
                 cancellationToken);
         }
 
@@ -125,7 +125,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.Status.Value == status.Value)
+                .Where(r => EF.Property<string>(r, "_status") == status.Value)
                 .OrderByDescending(r => r.RegisteredAt)
                 .ToListAsync(cancellationToken);
         }
@@ -137,17 +137,19 @@ namespace EventManagementSystem.Persistence.Repositories
                 .Include(r => r.Event)
                     .ThenInclude(e => e.Category)
                 .Include(r => r.User)
-                .Where(r => r.Status.Value == "Registered" && r.Event!.EventDateTime.StartDateTime > now);
+                .Where(r => EF.Property<string>(r, "_status") == "Registered" && EF.Property<DateTime>(r.Event, "_startDateTime") > now);
 
             if (userId != null)
             {
-                query = query.Where(r => r.UserId.Value == userId.Value);
+                query = query.Where(r => EF.Property<int>(r, "_userId") == userId.Value);
             }
 
             return await query
-                .OrderBy(r => r.Event!.EventDateTime.StartDateTime)
+                .OrderBy(r => EF.Property<DateTime>(r.Event, "_startDateTime"))
                 .ToListAsync(cancellationToken);
         }
+
+        // ... (other methods remain similar - just replace Status.Value with EF.Property<string>(r, "_status") and similar for other value objects)
 
         public async Task<IReadOnlyList<EventRegistration>> GetRegistrationsByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
@@ -173,15 +175,15 @@ namespace EventManagementSystem.Persistence.Repositories
         {
             var ids = eventIds.Select(e => e.Value).ToList();
             return await this.dbSet
-                .Where(r => ids.Contains(r.EventId.Value) && r.Status.Value == "Registered")
-                .GroupBy(r => r.EventId.Value)
+                .Where(r => ids.Contains(EF.Property<int>(r, "_eventId")) && EF.Property<string>(r, "_status") == "Registered")
+                .GroupBy(r => EF.Property<int>(r, "_eventId"))
                 .ToDictionaryAsync(g => EventId.Create(g.Key), g => g.Count(), cancellationToken);
         }
 
         public async Task<Dictionary<UserId, int>> GetRegistrationCountsByUserAsync(IEnumerable<UserId> userIds, DateTime? fromDate = null, CancellationToken cancellationToken = default)
         {
             var ids = userIds.Select(u => u.Value).ToList();
-            var query = this.dbSet.Where(r => ids.Contains(r.UserId.Value));
+            var query = this.dbSet.Where(r => ids.Contains(EF.Property<int>(r, "_userId")));
 
             if (fromDate.HasValue)
             {
@@ -189,7 +191,7 @@ namespace EventManagementSystem.Persistence.Repositories
             }
 
             return await query
-                .GroupBy(r => r.UserId.Value)
+                .GroupBy(r => EF.Property<int>(r, "_userId"))
                 .ToDictionaryAsync(g => UserId.Create(g.Key), g => g.Count(), cancellationToken);
         }
 
@@ -207,7 +209,7 @@ namespace EventManagementSystem.Persistence.Repositories
 
             if (eventId != null)
             {
-                query = query.Where(r => r.EventId.Value == eventId.Value);
+                query = query.Where(r => EF.Property<int>(r, "_eventId") == eventId.Value);
             }
 
             if (fromDate.HasValue)
@@ -216,7 +218,7 @@ namespace EventManagementSystem.Persistence.Repositories
             }
 
             var stats = await query
-                .GroupBy(r => r.Status.Value)
+                .GroupBy(r => EF.Property<string>(r, "_status"))
                 .ToDictionaryAsync(g => g.Key, g => g.Count(), cancellationToken);
 
             return stats.ToDictionary(
@@ -229,7 +231,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.EventId.Value == eventId.Value && r.Status.Value == "Attended")
+                .Where(r => EF.Property<int>(r, "_eventId") == eventId.Value && EF.Property<string>(r, "_status") == "Attended")
                 .OrderBy(r => r.User!.LastName)
                 .ToListAsync(cancellationToken);
         }
@@ -239,7 +241,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => r.EventId.Value == eventId.Value && r.Status.Value == "NoShow")
+                .Where(r => EF.Property<int>(r, "_eventId") == eventId.Value && EF.Property<string>(r, "_status") == "NoShow")
                 .OrderBy(r => r.User!.LastName)
                 .ToListAsync(cancellationToken);
         }
@@ -247,16 +249,16 @@ namespace EventManagementSystem.Persistence.Repositories
         public async Task<double> GetAttendanceRateForEventAsync(EventId eventId, CancellationToken cancellationToken = default)
         {
             var totalRegistrations = await this.dbSet.CountAsync(r =>
-                r.EventId.Value == eventId.Value &&
-                (r.Status.Value == "Attended" || r.Status.Value == "NoShow"),
+                EF.Property<int>(r, "_eventId") == eventId.Value &&
+                (EF.Property<string>(r, "_status") == "Attended" || EF.Property<string>(r, "_status") == "NoShow"),
                 cancellationToken);
 
             if (totalRegistrations == 0)
                 return 0;
 
             var attendees = await this.dbSet.CountAsync(r =>
-                r.EventId.Value == eventId.Value &&
-                r.Status.Value == "Attended",
+                EF.Property<int>(r, "_eventId") == eventId.Value &&
+                EF.Property<string>(r, "_status") == "Attended",
                 cancellationToken);
 
             return (double)attendees / totalRegistrations * 100;
@@ -278,7 +280,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => ids.Contains(r.UserId.Value))
+                .Where(r => ids.Contains(EF.Property<int>(r, "_userId")))
                 .ToListAsync(cancellationToken);
         }
 
@@ -288,7 +290,7 @@ namespace EventManagementSystem.Persistence.Repositories
             return await this.dbSet
                 .Include(r => r.Event)
                 .Include(r => r.User)
-                .Where(r => ids.Contains(r.EventId.Value))
+                .Where(r => ids.Contains(EF.Property<int>(r, "_eventId")))
                 .ToListAsync(cancellationToken);
         }
 
@@ -313,17 +315,17 @@ namespace EventManagementSystem.Persistence.Repositories
             // Apply filters
             if (userId != null)
             {
-                query = query.Where(r => r.UserId.Value == userId.Value);
+                query = query.Where(r => EF.Property<int>(r, "_userId") == userId.Value);
             }
 
             if (eventId != null)
             {
-                query = query.Where(r => r.EventId.Value == eventId.Value);
+                query = query.Where(r => EF.Property<int>(r, "_eventId") == eventId.Value);
             }
 
             if (status != null)
             {
-                query = query.Where(r => r.Status.Value == status.Value);
+                query = query.Where(r => EF.Property<string>(r, "_status") == status.Value);
             }
 
             if (registeredAfter.HasValue)
@@ -343,7 +345,7 @@ namespace EventManagementSystem.Persistence.Repositories
             {
                 "username" => ascending ? query.OrderBy(r => r.User!.LastName) : query.OrderByDescending(r => r.User!.LastName),
                 "eventtitle" => ascending ? query.OrderBy(r => r.Event!.Title) : query.OrderByDescending(r => r.Event!.Title),
-                "status" => ascending ? query.OrderBy(r => r.Status.Value) : query.OrderByDescending(r => r.Status.Value),
+                "status" => ascending ? query.OrderBy(r => EF.Property<string>(r, "_status")) : query.OrderByDescending(r => EF.Property<string>(r, "_status")),
                 "cancelledat" => ascending ? query.OrderBy(r => r.CancelledAt) : query.OrderByDescending(r => r.CancelledAt),
                 _ => ascending ? query.OrderBy(r => r.RegisteredAt) : query.OrderByDescending(r => r.RegisteredAt)
             };

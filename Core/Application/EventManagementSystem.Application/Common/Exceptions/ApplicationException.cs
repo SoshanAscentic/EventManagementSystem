@@ -7,16 +7,14 @@ namespace EventManagementSystem.Application.Common.Exceptions
     public abstract class ApplicationException : Exception
     {
         protected ApplicationException(string message)
-            : base(message) { }
+            : base(message)
+        {
+        }
 
         protected ApplicationException(string message, Exception innerException)
-            : base(message, innerException) { }
-    }
-
-    public class NotFoundException : ApplicationException
-    {
-        public NotFoundException(string resourceName, object key)
-            : base($"Entity \"{resourceName}\" with key \"{key}\" was not found.") { }
+            : base(message, innerException)
+        {
+        }
     }
 
     public class ValidationException : ApplicationException
@@ -33,12 +31,16 @@ namespace EventManagementSystem.Application.Common.Exceptions
     public class ForbiddenException : ApplicationException
     {
         public ForbiddenException(string message)
-            : base(message) { }
+            : base(message)
+        {
+        }
     }
 
     public class ConflictException : ApplicationException
     {
         public ConflictException(string message)
-            : base(message) { }
+            : base(message)
+        {
+        }
     }
 }

@@ -6,6 +6,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvent
 {
     using AutoMapper;
     using EventManagementSystem.Application.Common.Constants;
+    using EventManagementSystem.Application.Common.Extensions;
     using EventManagementSystem.Application.Common.Models;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Application.Usecases.Queries.GetEvents;
@@ -17,16 +18,13 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvent
     public class GetEventsQueryHandler : IRequestHandler<GetEventsQuery, Result<PagedResult<EventDto>>>
     {
         private readonly IEventRepository eventRepository;
-        private readonly IMapper mapper;
         private readonly ILogger<GetEventsQueryHandler> logger;
 
         public GetEventsQueryHandler(
             IEventRepository eventRepository,
-            IMapper mapper,
             ILogger<GetEventsQueryHandler> logger)
         {
             this.eventRepository = eventRepository;
-            this.mapper = mapper;
             this.logger = logger;
         }
 
@@ -60,7 +58,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvent
                     request.Ascending,
                     cancellationToken);
 
-                var eventDtos = this.mapper.Map<List<EventDto>>(events);
+                var eventDtos = events.ToDto();
                 var pagedResult = new PagedResult<EventDto>(eventDtos, totalCount, request.PageNumber, request.PageSize);
 
                 this.logger.LogInformation("Successfully retrieved {Count} events out of {Total}", events.Count, totalCount);
@@ -69,17 +67,17 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvent
             catch (ArgumentException ex) when (ex.Message.Contains("event type"))
             {
                 this.logger.LogWarning(ex, "Invalid event type provided: {EventType}", request.EventType);
-                return DomainErrors.Event.InvalidEventType(request.EventType ?? string.Empty);
+                return Result<PagedResult<EventDto>>.ValidationFailure("Event.InvalidEventType", $"Invalid event type: {request.EventType}");
             }
             catch (ArgumentException ex) when (ex.Message.Contains("page"))
             {
                 this.logger.LogWarning(ex, "Invalid pagination parameters");
-                return DomainErrors.General.ValidationFailed("Invalid pagination parameters");
+                return Result<PagedResult<EventDto>>.ValidationFailure("General.InvalidPagination", "Invalid pagination parameters");
             }
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Unexpected error getting events");
-                return DomainErrors.General.UnexpectedError();
+                return Result<PagedResult<EventDto>>.Failure("General.UnexpectedError", "An unexpected error occurred while retrieving events");
             }
         }
     }

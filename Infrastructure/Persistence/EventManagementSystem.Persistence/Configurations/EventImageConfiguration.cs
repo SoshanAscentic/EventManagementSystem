@@ -18,8 +18,8 @@ namespace EventManagementSystem.Persistence.Configurations
             // Primary key
             builder.HasKey(i => i.Id);
 
-            // Map backing field directly instead of using owned type
-            builder.Property("_eventId")
+            // Map backing field directly
+            builder.Property<int>("_eventId")
                 .HasColumnName("EventId")
                 .IsRequired();
 

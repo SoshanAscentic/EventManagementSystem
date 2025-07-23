@@ -1,4 +1,8 @@
-﻿namespace EventManagementSystem.API.Models
+﻿// <copyright file="PaginationParameters.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
+
+namespace EventManagementSystem.API.Models
 {
     public class PaginationParameters
     {

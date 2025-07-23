@@ -110,7 +110,7 @@ namespace EventManagementSystem.Identity
                             context.Token = token;
                         }
                         return Task.CompletedTask;
-                    }
+                    },
                 };
             });
 
@@ -134,6 +134,7 @@ namespace EventManagementSystem.Identity
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<Application.Common.Interfaces.IAuthenticationService, AuthenticationService>();
 
             return services;
         }

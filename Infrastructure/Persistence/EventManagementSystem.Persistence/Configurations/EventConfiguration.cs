@@ -30,7 +30,7 @@ namespace EventManagementSystem.Persistence.Configurations
             builder.Property(e => e.CategoryId)
                 .IsRequired();
 
-            // Map the backing fields directly instead of using owned types
+            // Map the backing fields directly - REMOVE the quotes around field names
             builder.Property("_startDateTime")
                 .HasColumnName("StartDateTime")
                 .IsRequired();
@@ -66,6 +66,13 @@ namespace EventManagementSystem.Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
+            // Add computed columns for queries - these map the backing fields to queryable properties
+            builder.Property<DateTime>("StartDateTime")
+                .HasComputedColumnSql("[StartDateTime]");
+
+            builder.Property<DateTime>("EndDateTime")
+                .HasComputedColumnSql("[EndDateTime]");
+
             // Relationships
             builder.HasOne(e => e.Category)
                 .WithMany(c => c.Events)
@@ -74,25 +81,25 @@ namespace EventManagementSystem.Persistence.Configurations
 
             builder.HasMany(e => e.Registrations)
                 .WithOne(r => r.Event)
-                .HasForeignKey("EventId")
+                .HasForeignKey("_eventId") // Use the backing field name
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(e => e.Images)
                 .WithOne(i => i.Event)
-                .HasForeignKey("EventId")
+                .HasForeignKey("_eventId") // Use the backing field name
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Indexes
+            // Indexes - use column names not backing field names
             builder.HasIndex(e => e.Title)
                 .HasDatabaseName("IX_Events_Title");
 
-            builder.HasIndex("_startDateTime")
+            builder.HasIndex("StartDateTime")
                 .HasDatabaseName("IX_Events_StartDateTime");
 
             builder.HasIndex(e => e.CategoryId)
                 .HasDatabaseName("IX_Events_CategoryId");
 
-            // Ignore computed properties, owned types, and domain events
+            // Ignore computed properties and value objects
             builder.Ignore(e => e.EventId);
             builder.Ignore(e => e.EventDateTime);
             builder.Ignore(e => e.Location);

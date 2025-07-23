@@ -33,7 +33,9 @@ namespace EventManagementSystem.Identity.Services
 
             var claims = new List<Claim>
             {
-                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()), // This is the key claim for user ID
+                new("sub", user.Id.ToString()), // Alternative claim name
+                new("id", user.Id.ToString()), // Another alternative for compatibility
                 new(ClaimTypes.Name, user.UserName!),
                 new(ClaimTypes.Email, user.Email!),
                 new(ClaimTypes.GivenName, user.FirstName),
@@ -41,6 +43,7 @@ namespace EventManagementSystem.Identity.Services
                 new("FullName", user.FullName),
                 new("IsEmailConfirmed", user.EmailConfirmed.ToString()),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
             };
 
             // Add role claims
@@ -59,6 +62,7 @@ namespace EventManagementSystem.Identity.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        // Rest of the methods remain the same...
         public RefreshToken GenerateRefreshToken(string ipAddress)
         {
             using var rng = RandomNumberGenerator.Create();

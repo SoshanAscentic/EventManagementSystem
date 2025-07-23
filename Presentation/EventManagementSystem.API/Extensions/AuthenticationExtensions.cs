@@ -21,19 +21,43 @@ namespace EventManagementSystem.API.Extensions
                 options.SlidingExpiration = true;
             });
 
-            // Override JWT Bearer options to read from cookies
+            // Override JWT Bearer options to read from both cookies AND headers
             services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 var originalOnMessageReceived = options.Events.OnMessageReceived;
                 options.Events.OnMessageReceived = context =>
                 {
-                    // Try to get token from cookie first
-                    if (string.IsNullOrEmpty(context.Token))
+                    // First, try to get token from Authorization header (for Swagger/API clients)
+                    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                    {
+                        context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                    }
+                    // If no header token, try to get from cookie (for web clients)
+                    else if (string.IsNullOrEmpty(context.Token))
                     {
                         context.Token = context.Request.Cookies["AccessToken"];
                     }
 
                     return originalOnMessageReceived?.Invoke(context) ?? Task.CompletedTask;
+                };
+
+                // Add debugging for authentication failures
+                options.Events.OnAuthenticationFailed = context =>
+                {
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    logger.LogWarning("JWT Authentication failed: {Exception}", context.Exception.Message);
+                    return Task.CompletedTask;
+                };
+
+                options.Events.OnTokenValidated = context =>
+                {
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    var userId = context.Principal?.FindFirst("sub")?.Value ??
+                                context.Principal?.FindFirst("nameid")?.Value ??
+                                context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    logger.LogInformation("JWT Token validated for user: {UserId}", userId);
+                    return Task.CompletedTask;
                 };
             });
 

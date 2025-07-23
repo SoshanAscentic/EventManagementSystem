@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.OpenApi.Models;
-using System.Reflection;
+﻿// <copyright file="ServiceCollectionExtensions.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
 
 namespace EventManagementSystem.API.Extensions
 {
+    using System.Reflection;
+    using Microsoft.AspNetCore.RateLimiting;
+    using Microsoft.OpenApi.Models;
+
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
@@ -11,15 +15,26 @@ namespace EventManagementSystem.API.Extensions
             services.AddEndpointsApiExplorer();
             services.AddHttpContextAccessor();
 
-            // CORS Configuration
+            // CORS Configuration - Fixed
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins(configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" })
+                    var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                        ?? new[] { "http://localhost:3000", "https://localhost:3001", "https://localhost:7026" }; // Added your current origin
+
+                    policy.WithOrigins(allowedOrigins)
                           .AllowAnyMethod()
                           .AllowAnyHeader()
                           .AllowCredentials(); // Important for HTTP-only cookies
+                });
+
+                // Add a more permissive policy for development/testing
+                options.AddPolicy("Development", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
                 });
             });
 
@@ -38,44 +53,52 @@ namespace EventManagementSystem.API.Extensions
                     Contact = new OpenApiContact
                     {
                         Name = "Event Management Team",
-                        Email = "support@eventmanagement.com"
-                    }
+                        Email = "support@eventmanagement.com",
+                    },
                 });
 
-                // Include XML comments
-                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                c.IncludeXmlComments(xmlPath);
-
-                // JWT Authentication
+                // JWT Authentication - Fixed
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Description = "JWT Authorization header using the Bearer scheme",
+                    Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.ApiKey,
-                    Scheme = "Bearer"
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT"
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
                 {
-                    new OpenApiSecurityScheme
                     {
-                        Reference = new OpenApiReference
+                        new OpenApiSecurityScheme
                         {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer",
+                            },
+                            Scheme = "oauth2",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header,
+                        },
+                        new List<string>()
                     },
-                    Array.Empty<string>()
+                });
+
+                // Include XML comments if available
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    c.IncludeXmlComments(xmlPath);
                 }
-            });
             });
 
             return services;
         }
 
+        // Rest of the methods remain the same...
         public static IServiceCollection AddSignalRServices(this IServiceCollection services)
         {
             services.AddSignalR(options =>
@@ -83,22 +106,11 @@ namespace EventManagementSystem.API.Extensions
                 options.EnableDetailedErrors = true;
                 options.KeepAliveInterval = TimeSpan.FromSeconds(30);
                 options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+                options.MaximumReceiveMessageSize = 32768; // 32KB
             });
 
             return services;
         }
-
-        //public static IServiceCollection AddHealthCheckServices(this IServiceCollection services, IConfiguration configuration)
-        //{
-        //    services.AddHealthChecks()
-        //        .AddSqlServer(
-        //            configuration.GetConnectionString("DefaultConnection")!,
-        //            name: "database",
-        //            tags: new[] { "database", "sql", "ready" })
-        //        .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "self" });
-
-        //    return services;
-        //}
 
         public static IServiceCollection AddRateLimitingServices(this IServiceCollection services)
         {
@@ -115,6 +127,14 @@ namespace EventManagementSystem.API.Extensions
                 options.AddFixedWindowLimiter("Auth", configure =>
                 {
                     configure.PermitLimit = 10;
+                    configure.Window = TimeSpan.FromMinutes(1);
+                    configure.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+                    configure.QueueLimit = 2;
+                });
+
+                options.AddFixedWindowLimiter("Upload", configure =>
+                {
+                    configure.PermitLimit = 5;
                     configure.Window = TimeSpan.FromMinutes(1);
                     configure.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
                     configure.QueueLimit = 2;

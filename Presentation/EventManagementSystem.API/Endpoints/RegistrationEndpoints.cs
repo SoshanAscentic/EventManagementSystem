@@ -1,56 +1,71 @@
-﻿using EventManagementSystem.API.Models;
-using EventManagementSystem.Application.DTOs;
-using EventManagementSystem.Application.Usecases.Commands.CancelRegistration;
-using EventManagementSystem.Application.Usecases.Commands.RegisterForEvent;
-using EventManagementSystem.Application.Usecases.Queries.GetEventRegistration;
-using EventManagementSystem.Application.Usecases.Queries.GetUserRegistrations;
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
+﻿// <copyright file="RegistrationEndpoints.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
 
 namespace EventManagementSystem.API.Endpoints
 {
+    using EventManagementSystem.API.Models;
+    using EventManagementSystem.Application.DTOs;
+    using EventManagementSystem.Application.Usecases.Commands.CancelRegistration;
+    using EventManagementSystem.Application.Usecases.Commands.MarkAttendance;
+    using EventManagementSystem.Application.Usecases.Commands.RegisterForEvent;
+    using EventManagementSystem.Application.Usecases.Queries.GetEventRegistration;
+    using EventManagementSystem.Application.Usecases.Queries.GetUserRegistrations;
+    using MediatR;
+    using Microsoft.AspNetCore.Mvc;
+
     public static class RegistrationEndpoints
     {
         public static void MapRegistrationEndpoints(this IEndpointRouteBuilder app)
         {
             var registrations = app.MapGroup("/api/registrations")
                 .WithTags("Registrations")
-                .RequireRateLimiting("Api")
-                .RequireAuthorization();
+                .RequireRateLimiting("Api");
 
+            // User endpoints
             registrations.MapPost("/", RegisterForEventAsync)
                 .WithName("RegisterForEvent")
                 .WithSummary("Register for an event")
                 .WithDescription("Registers the current user for an event")
+                .RequireAuthorization()
                 .Produces<ApiResponse<int>>(201)
                 .Produces<ApiResponse>(400)
                 .Produces<ApiResponse>(401);
 
-            registrations.MapDelete("/{id:int}", CancelRegistrationAsync)
+            registrations.MapDelete("/{registrationId:int}", CancelRegistrationAsync)
                 .WithName("CancelRegistration")
-                .WithSummary("Cancel event registration")
+                .WithSummary("Cancel a registration")
                 .WithDescription("Cancels a user's registration for an event")
+                .RequireAuthorization()
                 .Produces<ApiResponse>(200)
                 .Produces<ApiResponse>(400)
-                .Produces<ApiResponse>(401)
-                .Produces<ApiResponse>(404);
+                .Produces<ApiResponse>(401);
 
-            registrations.MapGet("/my", GetMyRegistrationsAsync)
+            registrations.MapGet("/my-registrations", GetMyRegistrationsAsync)
                 .WithName("GetMyRegistrations")
                 .WithSummary("Get current user's registrations")
                 .WithDescription("Retrieves all registrations for the current user")
+                .RequireAuthorization()
                 .Produces<ApiResponse<PagedResponse<RegistrationDto>>>(200)
                 .Produces<ApiResponse>(401);
 
             // Admin endpoints
             registrations.MapGet("/event/{eventId:int}", GetEventRegistrationsAsync)
                 .WithName("GetEventRegistrations")
-                .WithSummary("Get registrations for an event")
+                .WithSummary("Get event registrations")
                 .WithDescription("Retrieves all registrations for a specific event (Admin only)")
                 .RequireAuthorization("RequireAdminRole")
                 .Produces<ApiResponse<PagedResponse<RegistrationDto>>>(200)
-                .Produces<ApiResponse>(403)
-                .Produces<ApiResponse>(404);
+                .Produces<ApiResponse>(403);
+
+            registrations.MapPut("/{registrationId:int}/attendance", MarkAttendanceAsync)
+                .WithName("MarkAttendance")
+                .WithSummary("Mark attendance")
+                .WithDescription("Marks attendance for a registration (Admin only)")
+                .RequireAuthorization("RequireAdminRole")
+                .Produces<ApiResponse>(200)
+                .Produces<ApiResponse>(400)
+                .Produces<ApiResponse>(403);
         }
 
         private static async Task<IResult> RegisterForEventAsync(
@@ -59,7 +74,6 @@ namespace EventManagementSystem.API.Endpoints
             HttpContext context)
         {
             var userIdClaim = context.User.FindFirst("sub") ?? context.User.FindFirst("id");
-
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
                 return Results.Unauthorized();
@@ -69,7 +83,7 @@ namespace EventManagementSystem.API.Endpoints
             {
                 EventId = request.EventId,
                 UserId = userId,
-                Notes = request.Notes
+                Notes = request.Notes,
             };
 
             var result = await mediator.Send(command);
@@ -79,19 +93,20 @@ namespace EventManagementSystem.API.Endpoints
                 return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
             }
 
-            return Results.Created($"/api/registrations/{result.Value}",
+            return Results.Created(
+                $"/api/registrations/{result.Value}",
                 ApiResponse<int>.SuccessResponse(result.Value, "Registration successful"));
         }
 
         private static async Task<IResult> CancelRegistrationAsync(
-            int id,
+            int registrationId,
             [FromBody] CancelRegistrationRequest? request,
             ISender mediator)
         {
             var command = new CancelRegistrationCommand
             {
-                RegistrationId = id,
-                Reason = request?.Reason
+                RegistrationId = registrationId,
+                Reason = request?.Reason,
             };
 
             var result = await mediator.Send(command);
@@ -110,7 +125,6 @@ namespace EventManagementSystem.API.Endpoints
             HttpContext context)
         {
             var userIdClaim = context.User.FindFirst("sub") ?? context.User.FindFirst("id");
-
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
                 return Results.Unauthorized();
@@ -119,7 +133,7 @@ namespace EventManagementSystem.API.Endpoints
             var query = new GetUserRegistrationsQuery(userId)
             {
                 PageNumber = pagination.PageNumber,
-                PageSize = pagination.PageSize
+                PageSize = pagination.PageSize,
             };
 
             var result = await mediator.Send(query);
@@ -137,7 +151,7 @@ namespace EventManagementSystem.API.Endpoints
                 PageSize = result.Value.PageSize,
                 TotalPages = result.Value.TotalPages,
                 HasNextPage = result.Value.HasNextPage,
-                HasPreviousPage = result.Value.HasPreviousPage
+                HasPreviousPage = result.Value.HasPreviousPage,
             };
 
             return Results.Ok(ApiResponse<PagedResponse<RegistrationDto>>.SuccessResponse(response));
@@ -153,7 +167,7 @@ namespace EventManagementSystem.API.Endpoints
             {
                 PageNumber = pagination.PageNumber,
                 PageSize = pagination.PageSize,
-                Status = status
+                Status = status,
             };
 
             var result = await mediator.Send(query);
@@ -171,10 +185,31 @@ namespace EventManagementSystem.API.Endpoints
                 PageSize = result.Value.PageSize,
                 TotalPages = result.Value.TotalPages,
                 HasNextPage = result.Value.HasNextPage,
-                HasPreviousPage = result.Value.HasPreviousPage
+                HasPreviousPage = result.Value.HasPreviousPage,
             };
 
             return Results.Ok(ApiResponse<PagedResponse<RegistrationDto>>.SuccessResponse(response));
+        }
+
+        private static async Task<IResult> MarkAttendanceAsync(
+            int registrationId,
+            [FromBody] MarkAttendanceRequest request,
+            ISender mediator)
+        {
+            var command = new MarkAttendanceCommand
+            {
+                RegistrationId = registrationId,
+                Attended = request.Attended,
+            };
+
+            var result = await mediator.Send(command);
+
+            if (result.IsFailure)
+            {
+                return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
+            }
+
+            return Results.Ok(ApiResponse.SuccessResponse("Attendance marked successfully"));
         }
     }
 }

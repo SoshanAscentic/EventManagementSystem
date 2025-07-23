@@ -1,3 +1,7 @@
+// <copyright file="Program.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
+
 using EventManagementSystem.API.Extensions;
 using EventManagementSystem.Application;
 using EventManagementSystem.Identity;
@@ -7,10 +11,6 @@ using Serilog;
 internal class Program
 {
     private static async Task Main(string[] args)
-
-
-
-
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -21,35 +21,40 @@ internal class Program
                 .ReadFrom.Configuration(context.Configuration)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
-                .WriteTo.Seq(context.Configuration.GetConnectionString("Seq") ?? "http://localhost:5341");
+                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
-        // Add services to the container
-        builder.Services.AddApplication();
-        builder.Services.AddPersistence(builder.Configuration);
-        builder.Services.AddIdentityServices(builder.Configuration);
-
-        // Add API services
-        builder.Services.AddApiServices(builder.Configuration);
-        builder.Services.AddAuthenticationServices(builder.Configuration);
-        builder.Services.AddSwaggerServices();
-        builder.Services.AddSignalRServices();
-        //builder.Services.AddHealthCheckServices(builder.Configuration);
-        builder.Services.AddRateLimitingServices();
-
-        var app = builder.Build();
-
-        // Configure the HTTP request pipeline
-        await app.ConfigureApplicationAsync();
-
-        // Initialize database and identity
-        using (var scope = app.Services.CreateScope())
+        try
         {
-            await scope.ServiceProvider.InitializeDatabaseAsync();
-            await scope.ServiceProvider.InitializeIdentityAsync();
-        }
+            Log.Information("Starting Event Management System API");
 
-        app.Run();
+            // Add services to the container
+            builder.Services.AddApplication();
+            builder.Services.AddPersistence(builder.Configuration);
+            builder.Services.AddIdentityServices(builder.Configuration);
+
+            // Add API services
+            builder.Services.AddApiServices(builder.Configuration);
+            builder.Services.AddAuthenticationServices(builder.Configuration);
+            builder.Services.AddSwaggerServices();
+            builder.Services.AddSignalRServices();
+            builder.Services.AddRateLimitingServices();
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline
+            await app.ConfigureApplicationAsync();
+
+            Log.Information("Event Management System API started successfully");
+            app.Run();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Application terminated unexpectedly");
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
     }
 }

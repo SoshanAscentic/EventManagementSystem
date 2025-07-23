@@ -6,6 +6,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
 {
     using AutoMapper;
     using EventManagementSystem.Application.Common.Constants;
+    using EventManagementSystem.Application.Common.Extensions;
     using EventManagementSystem.Application.Common.Models;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Application.Usecases.Queries.GetEvent;
@@ -17,16 +18,13 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
     public class GetEventQueryHandler : IRequestHandler<GetEventQuery, Result<EventDto>>
     {
         private readonly IEventRepository eventRepository;
-        private readonly IMapper mapper;
-        private readonly ILogger<GetEventsQueryHandler> logger;
+        private readonly ILogger<GetEventQueryHandler> logger;
 
         public GetEventQueryHandler(
             IEventRepository eventRepository,
-            IMapper mapper,
-            ILogger<GetEventsQueryHandler> logger)
+            ILogger<GetEventQueryHandler> logger)
         {
             this.eventRepository = eventRepository;
-            this.mapper = mapper;
             this.logger = logger;
         }
 
@@ -46,19 +44,19 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
                     return DomainErrors.Event.NotFound(request.Id);
                 }
 
-                var eventDto = this.mapper.Map<EventDto>(eventEntity);
+                var eventDto = eventEntity.ToDto();
                 this.logger.LogInformation("Successfully retrieved event: {EventId}", request.Id);
                 return eventDto;
             }
             catch (ArgumentException ex) when (ex.Message.Contains("ID"))
             {
                 this.logger.LogWarning(ex, "Invalid event ID provided: {EventId}", request.Id);
-                return DomainErrors.General.InvalidId("Event");
+                return Result<EventDto>.ValidationFailure("General.InvalidId", $"Invalid event ID: {request.Id}");
             }
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Unexpected error getting event: {EventId}", request.Id);
-                return DomainErrors.General.UnexpectedError();
+                return Result<EventDto>.Failure("General.UnexpectedError", "An unexpected error occurred while retrieving the event");
             }
         }
     }
