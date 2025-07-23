@@ -44,6 +44,7 @@
 	  <ProjectReference Include="..\..\Core\Application\EventManagementSystem.Application\EventManagementSystem.Application.csproj" />
 	  <ProjectReference Include="..\..\Infrastructure\Identity\EventManagementSystem.Identity\EventManagementSystem.Identity.csproj" />
 	  <ProjectReference Include="..\..\Infrastructure\Persistence\EventManagementSystem.Persistence\EventManagementSystem.Persistence.csproj" />
+	  <ProjectReference Include="..\..\Infrastructure\Utils\EventManagementSystem.Utils\EventManagementSystem.Utils.csproj" />
 	</ItemGroup>
 	
 </Project>

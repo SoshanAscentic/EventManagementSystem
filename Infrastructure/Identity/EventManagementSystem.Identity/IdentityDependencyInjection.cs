@@ -109,6 +109,7 @@ namespace EventManagementSystem.Identity
                         {
                             context.Token = token;
                         }
+
                         return Task.CompletedTask;
                     },
                 };
@@ -189,12 +190,23 @@ namespace EventManagementSystem.Identity
                     LastName = "Administrator",
                     EmailConfirmed = true,
                     IsActive = true,
+
+                    // Don't set DomainUserId here - it will be set during synchronization
                 };
 
                 var result = await userManager.CreateAsync(adminUser, "Admin123!");
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(adminUser, "Admin");
+                }
+            }
+            else
+            {
+                // If admin exists but doesn't have DomainUserId, it will be handled by synchronization
+                if (!adminUser.DomainUserId.HasValue)
+                {
+                    // Log that this will be handled by the seeder
+                    Console.WriteLine("Admin user exists but needs domain user linking - will be handled by DatabaseSeeder");
                 }
             }
         }

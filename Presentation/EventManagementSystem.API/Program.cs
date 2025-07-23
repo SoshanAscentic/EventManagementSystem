@@ -2,8 +2,10 @@
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 
+using EventManagementSystem.API.Endpoints;
 using EventManagementSystem.API.Extensions;
 using EventManagementSystem.Application;
+using EventManagementSystem.Application.Common.Interfaces;
 using EventManagementSystem.Identity;
 using EventManagementSystem.Persistence;
 using Serilog;
@@ -43,7 +45,12 @@ internal class Program
             var app = builder.Build();
 
             // Configure the HTTP request pipeline
+            app.UseStaticFiles(); // Add this line
+
             await app.ConfigureApplicationAsync();
+
+            app.MapSignalRHubs();
+            // app.MapEventEndpoints();
 
             Log.Information("Event Management System API started successfully");
             app.Run();

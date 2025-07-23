@@ -5,6 +5,8 @@
 namespace EventManagementSystem.API.Extensions
 {
     using System.Reflection;
+    using EventManagementSystem.Application.Common.Interfaces;
+    using EventManagementSystem.Utils.Services;
     using Microsoft.AspNetCore.RateLimiting;
     using Microsoft.OpenApi.Models;
 
@@ -98,17 +100,10 @@ namespace EventManagementSystem.API.Extensions
             return services;
         }
 
-        // Rest of the methods remain the same...
         public static IServiceCollection AddSignalRServices(this IServiceCollection services)
         {
-            services.AddSignalR(options =>
-            {
-                options.EnableDetailedErrors = true;
-                options.KeepAliveInterval = TimeSpan.FromSeconds(30);
-                options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
-                options.MaximumReceiveMessageSize = 32768; // 32KB
-            });
-
+            services.AddSignalRWithAuth();
+            services.AddScoped<ISignalRNotificationService, SignalRNotificationService>();
             return services;
         }
 
