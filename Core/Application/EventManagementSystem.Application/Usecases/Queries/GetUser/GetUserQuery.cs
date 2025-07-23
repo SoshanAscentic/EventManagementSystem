@@ -1,4 +1,4 @@
-﻿// <copyright file="GetUsersQuery.cs" company="Ascentic">
+﻿// <copyright file="GetUserQuery.cs" company="Ascentic">
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 

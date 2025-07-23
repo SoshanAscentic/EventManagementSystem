@@ -27,7 +27,7 @@ namespace EventManagementSystem.Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
-            // Map backing fields directly instead of using owned types
+            // Map backing fields directly - FIXED: Remove quotes
             builder.Property("_email")
                 .HasColumnName("Email")
                 .HasMaxLength(254)
@@ -46,10 +46,10 @@ namespace EventManagementSystem.Persistence.Configurations
             // Relationships
             builder.HasMany(u => u.Registrations)
                 .WithOne(r => r.User)
-                .HasForeignKey("UserId")
+                .HasForeignKey("_userId")
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Indexes
+            // Indexes - use backing field names
             builder.HasIndex("_email")
                 .IsUnique()
                 .HasDatabaseName("IX_Users_Email");
