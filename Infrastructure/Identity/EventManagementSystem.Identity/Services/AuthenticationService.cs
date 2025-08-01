@@ -382,6 +382,7 @@ namespace EventManagementSystem.Identity.Services
                     FullName = user.FullName,
                     Roles = roles,
                     IsEmailConfirmed = user.EmailConfirmed,
+                    // Don't include AccessToken or RefreshToken for security
                 };
             }
             catch (Exception ex)
@@ -469,6 +470,7 @@ namespace EventManagementSystem.Identity.Services
                 FullName = user.FullName,
                 Roles = roles,
                 AccessToken = accessToken,
+                RefreshToken = refreshToken.Token, // ADD THIS LINE
                 ExpiresAt = DateTime.UtcNow.AddMinutes(15), // JWT expiry
                 IsEmailConfirmed = user.EmailConfirmed,
             };

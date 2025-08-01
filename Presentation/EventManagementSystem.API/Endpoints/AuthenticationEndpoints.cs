@@ -35,14 +35,17 @@ namespace EventManagementSystem.API.Endpoints
             auth.MapPost("/refresh", RefreshTokenAsync)
                 .WithName("RefreshToken")
                 .WithSummary("Refresh access token")
-                .WithDescription("Refreshes the access token using the refresh token from HTTP-only cookie")
+                .WithDescription("Refreshes the access token using the refresh token from request body")
+                .Accepts<RefreshTokenRequest>("application/json") // Add this
                 .Produces<ApiResponse<AuthenticationResponse>>(200)
+                .Produces<ApiResponse>(400)
                 .Produces<ApiResponse>(401);
 
             auth.MapPost("/logout", LogoutAsync)
                 .WithName("Logout")
                 .WithSummary("User logout")
-                .WithDescription("Logs out the user and clears HTTP-only cookies")
+                .WithDescription("Logs out the user and revokes the refresh token (refresh token can be provided in request body or will fallback to cookies)")
+                .Accepts<RefreshTokenRequest>("application/json") // Keep this but it's now optional
                 .Produces<ApiResponse>(200);
 
             auth.MapGet("/me", GetCurrentUserAsync)
@@ -75,8 +78,8 @@ namespace EventManagementSystem.API.Endpoints
                 return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
             }
 
-            // Set HTTP-only cookies
-            SetAuthenticationCookies(context, result.Value);
+            // Don't set HTTP-only cookies - just return the tokens in response
+            // SetAuthenticationCookies(context, result.Value); // Remove this line
 
             return Results.Ok(ApiResponse<AuthenticationResponse>.SuccessResponse(
                 result.Value,
@@ -96,8 +99,8 @@ namespace EventManagementSystem.API.Endpoints
                 return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
             }
 
-            // Set HTTP-only cookies
-            SetAuthenticationCookies(context, result.Value);
+            // Don't set HTTP-only cookies - just return the tokens in response
+            // SetAuthenticationCookies(context, result.Value); // Remove this line
 
             return Results.Created("/api/auth/me", ApiResponse<AuthenticationResponse>.SuccessResponse(
                 result.Value,
@@ -105,14 +108,18 @@ namespace EventManagementSystem.API.Endpoints
         }
 
         private static async Task<IResult> RefreshTokenAsync(
+            [FromBody] RefreshTokenRequest request, // Add this parameter
             IAuthenticationService authService,
             HttpContext context)
         {
-            var refreshToken = context.Request.Cookies["RefreshToken"];
+            // Try to get refresh token from request body first, then from cookie as fallback
+            var refreshToken = !string.IsNullOrEmpty(request.RefreshToken) 
+                ? request.RefreshToken 
+                : context.Request.Cookies["RefreshToken"];
 
             if (string.IsNullOrEmpty(refreshToken))
             {
-                return Results.Unauthorized();
+                return Results.BadRequest(ApiResponse.ErrorResponse(new List<string> { "Refresh token is required" }));
             }
 
             var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -120,12 +127,11 @@ namespace EventManagementSystem.API.Endpoints
 
             if (result.IsFailure)
             {
-                ClearAuthenticationCookies(context);
                 return Results.Unauthorized();
             }
 
-            // Set new HTTP-only cookies
-            SetAuthenticationCookies(context, result.Value);
+            // Don't set new HTTP-only cookies - just return the new tokens
+            // SetAuthenticationCookies(context, result.Value); // Remove this line
 
             return Results.Ok(ApiResponse<AuthenticationResponse>.SuccessResponse(
                 result.Value,
@@ -133,10 +139,14 @@ namespace EventManagementSystem.API.Endpoints
         }
 
         private static async Task<IResult> LogoutAsync(
+            [FromBody] RefreshTokenRequest? request, // Make it nullable
             IAuthenticationService authService,
             HttpContext context)
         {
-            var refreshToken = context.Request.Cookies["RefreshToken"];
+            // Try to get refresh token from request body first, then from cookie as fallback
+            var refreshToken = !string.IsNullOrEmpty(request?.RefreshToken)
+                ? request.RefreshToken
+                : context.Request.Cookies["RefreshToken"];
 
             if (!string.IsNullOrEmpty(refreshToken))
             {
@@ -144,7 +154,8 @@ namespace EventManagementSystem.API.Endpoints
                 await authService.LogoutAsync(refreshToken, ipAddress);
             }
 
-            ClearAuthenticationCookies(context);
+            // Don't clear cookies since we're not using them
+            // ClearAuthenticationCookies(context); // Remove this line
 
             return Results.Ok(ApiResponse.SuccessResponse("Logout successful"));
         }
@@ -194,34 +205,45 @@ namespace EventManagementSystem.API.Endpoints
 
         private static void SetAuthenticationCookies(HttpContext context, AuthenticationResponse authResponse)
         {
+            var isDevelopment = context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment();
+            
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = !isDevelopment,
+                SameSite = SameSiteMode.Lax, // Try Lax instead of Strict for development
                 Expires = authResponse.ExpiresAt,
+                Path = "/", // Explicitly set path
+                Domain = isDevelopment ? null : "yourdomain.com" // Set domain for production
             };
 
             var refreshCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7), // Refresh token expires in 7 days
+                Secure = !isDevelopment,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Path = "/",
+                Domain = isDevelopment ? null : "yourdomain.com"
             };
 
             context.Response.Cookies.Append("AccessToken", authResponse.AccessToken, cookieOptions);
-
-            // Note: RefreshToken would be set if it was returned from the service
+            
+            if (!string.IsNullOrEmpty(authResponse.RefreshToken))
+            {
+                context.Response.Cookies.Append("RefreshToken", authResponse.RefreshToken, refreshCookieOptions);
+            }
         }
 
         private static void ClearAuthenticationCookies(HttpContext context)
         {
+            var isDevelopment = context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment();
+
             var expiredCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.Strict, // ← FIX HERE
                 Expires = DateTime.UtcNow.AddDays(-1),
             };
 

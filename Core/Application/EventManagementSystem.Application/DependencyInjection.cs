@@ -32,8 +32,10 @@ namespace EventManagementSystem.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
 
-            // Register custom application services
+            // Register custom application services (only pure application services)
             services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+
+            // The infrastructure layer will override this with the enhanced version
             services.AddScoped<INotificationService, NotificationService>();
 
             return services;

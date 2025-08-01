@@ -14,18 +14,22 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
     using EventManagementSystem.Domain.ValueObjects;
     using MediatR;
     using Microsoft.Extensions.Logging;
+    using EventManagementSystem.Application.Common.Interfaces;
 
     public class GetEventQueryHandler : IRequestHandler<GetEventQuery, Result<EventDto>>
     {
         private readonly IEventRepository eventRepository;
         private readonly ILogger<GetEventQueryHandler> logger;
+        private readonly IFileStorageService fileStorageService;
 
         public GetEventQueryHandler(
             IEventRepository eventRepository,
-            ILogger<GetEventQueryHandler> logger)
+            ILogger<GetEventQueryHandler> logger,
+            IFileStorageService fileStorageService)
         {
             this.eventRepository = eventRepository;
             this.logger = logger;
+            this.fileStorageService = fileStorageService;
         }
 
         public async Task<Result<EventDto>> Handle(GetEventQuery request, CancellationToken cancellationToken)
@@ -44,7 +48,8 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
                     return DomainErrors.Event.NotFound(request.Id);
                 }
 
-                var eventDto = eventEntity.ToDto();
+                // Use the new async method that generates URLs
+                var eventDto = await eventEntity.ToDtoAsync(this.fileStorageService);
                 this.logger.LogInformation("Successfully retrieved event: {EventId}", request.Id);
                 return eventDto;
             }

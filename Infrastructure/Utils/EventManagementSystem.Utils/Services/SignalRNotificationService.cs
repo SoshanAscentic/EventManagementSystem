@@ -11,29 +11,29 @@ namespace EventManagementSystem.Utils.Services
 
     public class SignalRNotificationService : ISignalRNotificationService
     {
-        private readonly IHubContext<NotificationHub> _hubContext;
-        private readonly ILogger<SignalRNotificationService> _logger;
+        private readonly IHubContext<NotificationHub> hubContext;
+        private readonly ILogger<SignalRNotificationService> logger;
 
         public SignalRNotificationService(
             IHubContext<NotificationHub> hubContext,
             ILogger<SignalRNotificationService> logger)
         {
-            _hubContext = hubContext;
-            _logger = logger;
+            this.hubContext = hubContext;
+            this.logger = logger;
         }
 
         public async Task SendToUserAsync(int userId, NotificationDto notification, CancellationToken cancellationToken = default)
         {
             try
             {
-                await _hubContext.Clients.Group($"User_{userId}")
+                await hubContext.Clients.Group($"User_{userId}")
                     .SendAsync("ReceiveNotification", notification, cancellationToken);
 
-                _logger.LogInformation("Sent notification {NotificationId} to user {UserId}", notification.Id, userId);
+                logger.LogInformation("Sent notification {NotificationId} to user {UserId}", notification.Id, userId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send notification {NotificationId} to user {UserId}", notification.Id, userId);
+                logger.LogError(ex, "Failed to send notification {NotificationId} to user {UserId}", notification.Id, userId);
             }
         }
 
@@ -47,14 +47,14 @@ namespace EventManagementSystem.Utils.Services
         {
             try
             {
-                await _hubContext.Clients.Group(groupName)
+                await hubContext.Clients.Group(groupName)
                     .SendAsync("ReceiveNotification", notification, cancellationToken);
 
-                _logger.LogInformation("Sent notification {NotificationId} to group {GroupName}", notification.Id, groupName);
+                logger.LogInformation("Sent notification {NotificationId} to group {GroupName}", notification.Id, groupName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send notification {NotificationId} to group {GroupName}", notification.Id, groupName);
+                logger.LogError(ex, "Failed to send notification {NotificationId} to group {GroupName}", notification.Id, groupName);
             }
         }
 
@@ -62,14 +62,14 @@ namespace EventManagementSystem.Utils.Services
         {
             try
             {
-                await _hubContext.Clients.All
+                await hubContext.Clients.All
                     .SendAsync("ReceiveNotification", notification, cancellationToken);
 
-                _logger.LogInformation("Sent notification {NotificationId} to all connected users", notification.Id);
+                logger.LogInformation("Sent notification {NotificationId} to all connected users", notification.Id);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send notification {NotificationId} to all users", notification.Id);
+                logger.LogError(ex, "Failed to send notification {NotificationId} to all users", notification.Id);
             }
         }
 

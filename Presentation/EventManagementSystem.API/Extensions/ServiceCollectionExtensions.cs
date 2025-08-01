@@ -17,26 +17,49 @@ namespace EventManagementSystem.API.Extensions
             services.AddEndpointsApiExplorer();
             services.AddHttpContextAccessor();
 
-            // CORS Configuration - Fixed
+            // CORS Configuration - Fixed with correct ports
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowFrontend", policy =>
+                options.AddPolicy("Development", policy =>
+                {
+                    policy.WithOrigins(
+                              "http://localhost:5173",   // ✅ Vite default port
+                              "https://localhost:5173",  // ✅ HTTPS version
+                              "http://localhost:5174",   // ✅ Alternative port
+                              "https://localhost:5174",  // ✅ HTTPS alternative
+                              "http://localhost:3000",   // ✅ React/Next.js default
+                              "https://localhost:3000"   // ✅ HTTPS React/Next.js
+                          )
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials()  // ✅ Allow credentials for auth
+                          .SetIsOriginAllowedToAllowWildcardSubdomains(); // ✅ Allow subdomains
+                });
+
+                options.AddPolicy("Production", policy =>
                 {
                     var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                        ?? new[] { "http://localhost:3000", "https://localhost:3001", "https://localhost:7026" }; // Added your current origin
+                                        ?? new[] { "https://yourdomain.com" };
 
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyMethod()
                           .AllowAnyHeader()
-                          .AllowCredentials(); // Important for HTTP-only cookies
+                          .AllowCredentials();
                 });
 
-                // Add a more permissive policy for development/testing
-                options.AddPolicy("Development", policy =>
+                // Fallback policy for any environment
+                options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins(
+                              "http://localhost:5173",
+                              "https://localhost:5173",
+                              "http://localhost:5174",
+                              "https://localhost:5174",
+                              "http://localhost:3000",
+                              "https://localhost:3000")
                           .AllowAnyMethod()
-                          .AllowAnyHeader();
+                          .AllowAnyHeader()
+                          .AllowCredentials();
                 });
             });
 

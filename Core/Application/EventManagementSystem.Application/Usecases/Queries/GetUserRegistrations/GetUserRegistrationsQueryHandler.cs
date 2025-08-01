@@ -42,8 +42,9 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetUserRegistration
                     request.PageSize,
                     cancellationToken);
 
+                // Use navigation property instead of direct UserId
                 var totalCount = await this.registrationRepository.CountAsync(
-                    r => r.UserId == userId,
+                    r => r.User.Id == userId.Value, // Changed from r.UserId == userId
                     cancellationToken);
 
                 var registrationDtos = this.mapper.Map<List<RegistrationDto>>(registrations);

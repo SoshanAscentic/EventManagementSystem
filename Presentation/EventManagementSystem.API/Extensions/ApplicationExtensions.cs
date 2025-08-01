@@ -31,23 +31,23 @@ namespace EventManagementSystem.API.Extensions
                 });
             }
 
-            // Security and CORS
+            // Security and CORS - IMPORTANT: CORS must come before Authentication/Authorization
             app.UseHttpsRedirection();
 
-            // Use different CORS policy based on environment
+            // Use CORS policy based on environment
             if (app.Environment.IsDevelopment())
             {
                 app.UseCors("Development"); // More permissive for development
             }
             else
             {
-                app.UseCors("AllowFrontend");
+                app.UseCors("Production");
             }
 
             // Rate limiting
             app.UseRateLimiter();
 
-            // Authentication & Authorization
+            // Authentication & Authorization - MUST come after CORS
             app.UseAuthentication();
             app.UseAuthorization();
 

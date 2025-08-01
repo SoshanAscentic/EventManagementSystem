@@ -5,6 +5,7 @@
 namespace EventManagementSystem.Persistence.Configurations
 {
     using EventManagementSystem.Domain.Entities;
+    using EventManagementSystem.Domain.ValueObjects;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -81,7 +82,7 @@ namespace EventManagementSystem.Persistence.Configurations
             // Ignore computed properties, value objects, and domain events
             builder.Ignore(r => r.RegistrationId);
             builder.Ignore(r => r.EventId);
-            builder.Ignore(r => r.UserId);
+            builder.Ignore(r => r.UserId);  // KEEP THIS - ignore the public property
             builder.Ignore(r => r.Status);
             builder.Ignore(r => r.IsActive);
             builder.Ignore(r => r.IsCancelled);

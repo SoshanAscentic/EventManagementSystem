@@ -138,7 +138,7 @@ Environment vars (connection strings, JWT secret, blob storage) are injected via
 
 * Outlook / Google Calendar integration  
 * Web-hooks for external systems  
-* Admin UI (Blazor WASM or React)  
+* Admin UI (React or Next.js)  
 * Payment gateway for paid events  
 * Kubernetes Helm chart & GitHub Actions pipeline  
 
@@ -152,21 +152,5 @@ Environment vars (connection strings, JWT secret, blob storage) are injected via
 4. Open a Pull Request
 
 Please make sure to run `dotnet format` and that all tests pass before submitting.
-
----
-
-## 📜 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-## 🙏 Acknowledgements
-
-* [ASP.NET Core Team](https://github.com/dotnet/aspnetcore)  
-* [MediatR](https://github.com/jbogard/MediatR) & [FluentValidation](https://github.com/FluentValidation)  
-* [EF Core](https://github.com/dotnet/efcore)  
-* [SignalR](https://learn.microsoft.com/aspnet/core/signalr)  
-* Azure SDKs  
 
 Happy hacking! 🎉

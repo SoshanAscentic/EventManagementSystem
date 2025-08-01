@@ -23,5 +23,8 @@ namespace EventManagementSystem.Identity.Models
         public DateTime ExpiresAt { get; set; }
 
         public bool IsEmailConfirmed { get; set; }
+
+        // Add this property
+        public string RefreshToken { get; set; } = string.Empty;
     }
 }

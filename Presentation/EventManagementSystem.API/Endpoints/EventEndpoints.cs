@@ -5,6 +5,7 @@
 namespace EventManagementSystem.API.Endpoints
 {
     using EventManagementSystem.API.Models;
+    using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Application.Usecases.Commands.CreateEvent;
     using EventManagementSystem.Application.Usecases.Commands.DeleteEvent;
@@ -198,9 +199,11 @@ namespace EventManagementSystem.API.Endpoints
             return Results.Ok(ApiResponse<List<EventDto>>.SuccessResponse(result.Value));
         }
 
+        // ✅ Updated CreateEventAsync to send notifications
         private static async Task<IResult> CreateEventAsync(
             [FromBody] CreateEventCommand command,
             ISender mediator,
+            INotificationService notificationService, // ✅ Inject notification service
             ILogger<Program> logger)
         {
             try
@@ -267,6 +270,22 @@ namespace EventManagementSystem.API.Endpoints
                 }
 
                 logger.LogInformation("Event created successfully with ID: {EventId}", result.Value.Id);
+
+                // ✅ Send notification after successful creation
+                try
+                {
+                    await notificationService.SendEventCreatedNotificationAsync(
+                        result.Value.Id,
+                        result.Value.Title);
+
+                    logger.LogInformation("Event creation notification sent for: {EventTitle}", result.Value.Title);
+                }
+                catch (Exception notificationEx)
+                {
+                    // Don't fail the entire request if notification fails
+                    logger.LogError(notificationEx, "Failed to send event creation notification for: {EventTitle}", result.Value.Title);
+                }
+
                 return Results.Created(
                     $"/api/events/{result.Value.Id}",
                     ApiResponse<EventDto>.SuccessResponse(result.Value, "Event created successfully"));
@@ -278,10 +297,13 @@ namespace EventManagementSystem.API.Endpoints
             }
         }
 
+        // ✅ Updated UpdateEventAsync to send notifications
         private static async Task<IResult> UpdateEventAsync(
             int id,
             [FromBody] UpdateEventCommand command,
-            ISender mediator)
+            ISender mediator,
+            INotificationService notificationService, // ✅ Inject notification service
+            ILogger<Program> logger)
         {
             command.Id = id;
             var result = await mediator.Send(command);
@@ -291,7 +313,55 @@ namespace EventManagementSystem.API.Endpoints
                 return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
             }
 
+            // ✅ Send notification after successful update
+            try
+            {
+                // Get the event title for notification (you might need to modify this based on your result structure)
+                await notificationService.SendEventUpdatedNotificationAsync(id, command.Title);
+                logger.LogInformation("Event update notification sent for event ID: {EventId}", id);
+            }
+            catch (Exception notificationEx)
+            {
+                logger.LogError(notificationEx, "Failed to send event update notification for event ID: {EventId}", id);
+            }
+
             return Results.Ok(ApiResponse.SuccessResponse("Event updated successfully"));
+        }
+
+        // ✅ Updated DeleteEventAsync to send notifications
+        private static async Task<IResult> DeleteEventAsync(
+            int id,
+            ISender mediator,
+            INotificationService notificationService, // ✅ Inject notification service
+            ILogger<Program> logger)
+        {
+            // Get event details before deletion for notification
+            var getQuery = new GetEventQuery(id);
+            var eventResult = await mediator.Send(getQuery);
+
+            var command = new DeleteEventCommand(id);
+            var result = await mediator.Send(command);
+
+            if (result.IsFailure)
+            {
+                return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
+            }
+
+            // ✅ Send cancellation notification after successful deletion
+            if (eventResult.IsSuccess)
+            {
+                try
+                {
+                    await notificationService.SendEventCancelledNotificationAsync(id, eventResult.Value.Title);
+                    logger.LogInformation("Event cancellation notification sent for: {EventTitle}", eventResult.Value.Title);
+                }
+                catch (Exception notificationEx)
+                {
+                    logger.LogError(notificationEx, "Failed to send event cancellation notification for: {EventTitle}", eventResult.Value.Title);
+                }
+            }
+
+            return Results.Ok(ApiResponse.SuccessResponse("Event deleted successfully"));
         }
 
         private static async Task<IResult> UpdateEventCapacityAsync(
@@ -313,21 +383,6 @@ namespace EventManagementSystem.API.Endpoints
             }
 
             return Results.Ok(ApiResponse.SuccessResponse("Event capacity updated successfully"));
-        }
-
-        private static async Task<IResult> DeleteEventAsync(
-            int id,
-            ISender mediator)
-        {
-            var command = new DeleteEventCommand(id);
-            var result = await mediator.Send(command);
-
-            if (result.IsFailure)
-            {
-                return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
-            }
-
-            return Results.Ok(ApiResponse.SuccessResponse("Event deleted successfully"));
         }
 
         private static async Task<IResult> UploadEventImageAsync(
@@ -417,98 +472,6 @@ namespace EventManagementSystem.API.Endpoints
             }
 
             return Results.Ok(ApiResponse.SuccessResponse("Image deleted successfully"));
-        }
-    }
-}
-
-// Fixed CreateEventCommandValidator.cs
-namespace EventManagementSystem.Application.Usecases.Commands.CreateEvent
-{
-    using EventManagementSystem.Domain.ValueObjects;
-    using FluentValidation;
-
-    public class CreateEventCommandValidator : AbstractValidator<CreateEventCommand>
-    {
-        public CreateEventCommandValidator()
-        {
-            this.RuleFor(x => x.Title)
-                .NotEmpty()
-                .WithMessage("Event title is required")
-                .MaximumLength(200)
-                .WithMessage("Event title cannot exceed 200 characters");
-
-            this.RuleFor(x => x.Description)
-                .NotEmpty()
-                .WithMessage("Event description is required")
-                .MaximumLength(2000)
-                .WithMessage("Event description cannot exceed 2000 characters");
-
-            this.RuleFor(x => x.StartDateTime)
-                .Must(BeInTheFuture)
-                .WithMessage("Event start time must be in the future");
-
-            this.RuleFor(x => x.EndDateTime)
-                .GreaterThan(x => x.StartDateTime)
-                .WithMessage("Event end time must be after start time");
-
-            this.RuleFor(x => x.Venue)
-                .NotEmpty()
-                .WithMessage("Venue is required")
-                .MaximumLength(100)
-                .WithMessage("Venue name cannot exceed 100 characters");
-
-            this.RuleFor(x => x.Address)
-                .NotEmpty()
-                .WithMessage("Address is required")
-                .MaximumLength(200)
-                .WithMessage("Address cannot exceed 200 characters");
-
-            this.RuleFor(x => x.Capacity)
-                .GreaterThan(0)
-                .WithMessage("Event capacity must be greater than 0")
-                .LessThanOrEqualTo(10000)
-                .WithMessage("Event capacity cannot exceed 10,000");
-
-            this.RuleFor(x => x.EventType)
-                .NotEmpty()
-                .WithMessage("Event type is required")
-                .Must(BeValidEventType)
-                .WithMessage("Invalid event type. Valid types are: Conference, Workshop, Seminar, Webinar, Meeting, Training, Networking, Social, Competition, Exhibition, Performance, Festival, Sports, Charity, Other");
-
-            this.RuleFor(x => x.CategoryId)
-                .GreaterThan(0)
-                .WithMessage("Valid category ID is required");
-
-            this.RuleFor(x => x.City)
-                .MaximumLength(100)
-                .WithMessage("City name cannot exceed 100 characters")
-                .When(x => !string.IsNullOrEmpty(x.City));
-
-            this.RuleFor(x => x.Country)
-                .MaximumLength(100)
-                .WithMessage("Country name cannot exceed 100 characters")
-                .When(x => !string.IsNullOrEmpty(x.Country));
-        }
-
-        private static bool BeInTheFuture(DateTime dateTime)
-        {
-            return dateTime > DateTime.UtcNow;
-        }
-
-        private static bool BeValidEventType(string eventType)
-        {
-            if (string.IsNullOrEmpty(eventType))
-                return false;
-
-            try
-            {
-                EventType.Create(eventType);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
     }
 }

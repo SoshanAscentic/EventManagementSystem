@@ -21,12 +21,26 @@ namespace EventManagementSystem.API.Extensions
                 options.SlidingExpiration = true;
             });
 
-            // Override JWT Bearer options to read from both cookies AND headers
+            // Override JWT Bearer options to read from headers, cookies, AND query parameters (for SignalR)
             services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 var originalOnMessageReceived = options.Events.OnMessageReceived;
                 options.Events.OnMessageReceived = context =>
                 {
+                    var path = context.HttpContext.Request.Path;
+
+                    // IMPORTANT: Handle SignalR connections
+                    if (path.StartsWithSegments("/notificationHub"))
+                    {
+                        // For SignalR, token comes via query parameter
+                        var accessToken = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken))
+                        {
+                            context.Token = accessToken;
+                            return originalOnMessageReceived?.Invoke(context) ?? Task.CompletedTask;
+                        }
+                    }
+
                     // First, try to get token from Authorization header (for Swagger/API clients)
                     var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
                     if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
@@ -46,7 +60,16 @@ namespace EventManagementSystem.API.Extensions
                 options.Events.OnAuthenticationFailed = context =>
                 {
                     var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    logger.LogWarning("JWT Authentication failed: {Exception}", context.Exception.Message);
+                    var path = context.HttpContext.Request.Path;
+
+                    if (path.StartsWithSegments("/notificationHub"))
+                    {
+                        logger.LogWarning("SignalR JWT Authentication failed for path {Path}: {Exception}", path, context.Exception.Message);
+                    }
+                    else
+                    {
+                        logger.LogWarning("JWT Authentication failed for path {Path}: {Exception}", path, context.Exception.Message);
+                    }
                     return Task.CompletedTask;
                 };
 
@@ -56,7 +79,16 @@ namespace EventManagementSystem.API.Extensions
                     var userId = context.Principal?.FindFirst("sub")?.Value ??
                                 context.Principal?.FindFirst("nameid")?.Value ??
                                 context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                    logger.LogInformation("JWT Token validated for user: {UserId}", userId);
+                    var path = context.HttpContext.Request.Path;
+
+                    if (path.StartsWithSegments("/notificationHub"))
+                    {
+                        logger.LogInformation("SignalR JWT Token validated for user: {UserId}", userId);
+                    }
+                    else
+                    {
+                        logger.LogInformation("JWT Token validated for user: {UserId}", userId);
+                    }
                     return Task.CompletedTask;
                 };
             });
