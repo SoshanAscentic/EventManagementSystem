@@ -38,7 +38,7 @@ namespace EventManagementSystem.Persistence.Services
                 var uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
                 var blobPath = $"events/{DateTime.UtcNow:yyyy/MM/dd}/{uniqueFileName}";
 
-                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.ContainerName);
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.BlobContainerName);
                 await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: cancellationToken);
 
                 var blobClient = containerClient.GetBlobClient(blobPath);
@@ -79,7 +79,7 @@ namespace EventManagementSystem.Persistence.Services
             {
                 this.logger.LogInformation("Deleting file: {FilePath}", filePath);
 
-                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.ContainerName);
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.BlobContainerName);
                 var blobClient = containerClient.GetBlobClient(filePath);
 
                 var response = await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: cancellationToken);
@@ -100,7 +100,7 @@ namespace EventManagementSystem.Persistence.Services
             {
                 this.logger.LogInformation("Retrieving file: {FilePath}", filePath);
 
-                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.ContainerName);
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.BlobContainerName);
                 var blobClient = containerClient.GetBlobClient(filePath);
 
                 if (!await blobClient.ExistsAsync(cancellationToken))
@@ -122,7 +122,7 @@ namespace EventManagementSystem.Persistence.Services
         {
             try
             {
-                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.ContainerName);
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.BlobContainerName);
                 var blobClient = containerClient.GetBlobClient(filePath);
 
                 var response = await blobClient.ExistsAsync(cancellationToken);
@@ -139,7 +139,7 @@ namespace EventManagementSystem.Persistence.Services
         {
             try
             {
-                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.ContainerName);
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(this.settings.BlobContainerName);
                 var blobClient = containerClient.GetBlobClient(filePath);
 
                 if (!await blobClient.ExistsAsync(cancellationToken))

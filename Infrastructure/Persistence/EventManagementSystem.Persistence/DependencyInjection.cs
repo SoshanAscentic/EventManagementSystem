@@ -86,15 +86,19 @@ namespace EventManagementSystem.Persistence
             // Cache Service
             services.AddMemoryCache();
 
-            // Configure Azure Blob Storage
-            services.Configure<AzureBlobStorageSettings>(
-                configuration.GetSection(AzureBlobStorageSettings.SectionName));
+            // Configure Azure Blob Storage - Direct binding instead of section
+            services.Configure<AzureBlobStorageSettings>(options =>
+            {
+                options.BlobConnectionString = configuration["BlobConnectionString"] ?? string.Empty;
+                options.BlobContainerName = configuration["BlobContainerName"] ?? "event-images";
+                options.BlobBaseUrl = configuration["BlobBaseUrl"] ?? string.Empty;
+            });
 
             // Register BlobServiceClient
             services.AddScoped<BlobServiceClient>(provider =>
             {
                 var settings = provider.GetRequiredService<IOptions<AzureBlobStorageSettings>>().Value;
-                return new BlobServiceClient(settings.ConnectionString);
+                return new BlobServiceClient(settings.BlobConnectionString);
             });
 
             // Database Seeder - Updated to include required dependencies

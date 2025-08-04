@@ -1,13 +1,14 @@
+// <copyright file="AzureBlobStorageSettings.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
+
 namespace EventManagementSystem.Persistence.Configurations;
 
 public class AzureBlobStorageSettings
 {
-    public const string SectionName = "AzureBlobStorage";
+    public string BlobConnectionString { get; set; } = string.Empty;
 
-    public string ConnectionString { get; set; } = string.Empty;
+    public string BlobContainerName { get; set; } = string.Empty;
 
-    public string ContainerName { get; set; } = string.Empty;
-
-    public string BaseUrl { get; set; } = string.Empty;
-
+    public string BlobBaseUrl { get; set; } = string.Empty;
 } 
