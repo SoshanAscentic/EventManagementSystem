@@ -12,12 +12,15 @@ namespace EventManagementSystem.Utils
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
         {
-            // ✅ FIXED: Only register service implementations, not ASP.NET Core features
+            // Only register service implementations, not ASP.NET Core features
             // SignalR configuration stays in the API layer
             services.AddScoped<ISignalRNotificationService, SignalRNotificationService>();
 
-            // ✅ Override the basic notification service with the enhanced one
+            // Override the basic notification service with the enhanced one
             services.AddScoped<INotificationService, EnhancedNotificationService>();
+
+            // Register the background service for scheduled notifications
+            services.AddHostedService<NotificationBackgroundService>();
 
             return services;
         }

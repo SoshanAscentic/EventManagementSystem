@@ -5,6 +5,7 @@
 namespace EventManagementSystem.API.Endpoints
 {
     using EventManagementSystem.API.Models;
+    using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Application.Usecases.Commands.CancelRegistration;
     using EventManagementSystem.Application.Usecases.Commands.MarkAttendance;
@@ -69,9 +70,11 @@ namespace EventManagementSystem.API.Endpoints
         }
 
         private static async Task<IResult> RegisterForEventAsync(
-            [FromBody] RegisterForEventRequest request,
-            ISender mediator,
-            HttpContext context)
+        [FromBody] RegisterForEventRequest request,
+        ISender mediator,
+        INotificationService notificationService, // Add this injection
+        HttpContext context,
+        ILogger<Program> logger)
         {
             var userIdClaim = context.User.FindFirst("sub") ?? context.User.FindFirst("id");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
@@ -93,6 +96,18 @@ namespace EventManagementSystem.API.Endpoints
                 return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
             }
 
+            // Send notification after successful registration
+            try
+            {
+                await notificationService.SendRegistrationConfirmationAsync(result.Value);
+                logger.LogInformation("Registration confirmation notification sent for registration: {RegistrationId}", result.Value);
+            }
+            catch (Exception notificationEx)
+            {
+                // Don't fail the registration if notification fails
+                logger.LogError(notificationEx, "Failed to send registration confirmation notification for registration: {RegistrationId}", result.Value);
+            }
+
             return Results.Created(
                 $"/api/registrations/{result.Value}",
                 ApiResponse<int>.SuccessResponse(result.Value, "Registration successful"));
@@ -101,7 +116,9 @@ namespace EventManagementSystem.API.Endpoints
         private static async Task<IResult> CancelRegistrationAsync(
             int registrationId,
             [FromBody] CancelRegistrationRequest? request,
-            ISender mediator)
+            ISender mediator,
+            INotificationService notificationService, // Add this injection
+            ILogger<Program> logger)
         {
             var command = new CancelRegistrationCommand
             {
@@ -114,6 +131,17 @@ namespace EventManagementSystem.API.Endpoints
             if (result.IsFailure)
             {
                 return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
+            }
+
+            // Send notification after successful cancellation
+            try
+            {
+                await notificationService.SendRegistrationCancelledAsync(registrationId);
+                logger.LogInformation("Registration cancellation notification sent for registration: {RegistrationId}", registrationId);
+            }
+            catch (Exception notificationEx)
+            {
+                logger.LogError(notificationEx, "Failed to send registration cancellation notification for registration: {RegistrationId}", registrationId);
             }
 
             return Results.Ok(ApiResponse.SuccessResponse("Registration cancelled successfully"));

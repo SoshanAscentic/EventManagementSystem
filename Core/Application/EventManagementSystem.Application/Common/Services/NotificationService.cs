@@ -35,12 +35,6 @@ namespace EventManagementSystem.Application.Common.Services
             {
                 this.logger.LogInformation("Sending event created notification for event: {EventId} - {EventTitle}", eventId, eventTitle);
 
-                // What i need to do to implement actual notification logic:
-                // 1. Send emails to subscribers
-                // 2. Send push notifications
-                // 3. Send SignalR notifications
-                // 4. Create in-app notifications
-
                 // For now, just log the notification
                 this.logger.LogInformation("Event created notification sent for: {EventTitle}", eventTitle);
 

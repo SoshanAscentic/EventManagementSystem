@@ -17,6 +17,8 @@ namespace EventManagementSystem.API.Endpoints
     using EventManagementSystem.Application.Usecases.Queries.GetEvent;
     using EventManagementSystem.Application.Usecases.Queries.GetEvents;
     using EventManagementSystem.Application.Usecases.Queries.GetUpcomingEvent;
+    using EventManagementSystem.Domain.Repositories;
+    using EventManagementSystem.Utils.Services;
     using MediatR;
     using Microsoft.AspNetCore.Mvc;
 
@@ -78,13 +80,13 @@ namespace EventManagementSystem.API.Endpoints
                 .Produces<ApiResponse>(403);
 
             events.MapDelete("/{id:int}", DeleteEventAsync)
-                .WithName("DeleteEvent")
-                .WithSummary("Delete an event")
-                .WithDescription("Deletes an event (Admin only)")
-                .RequireAuthorization("RequireAdminRole")
-                .Produces<ApiResponse>(200)
-                .Produces<ApiResponse>(404)
-                .Produces<ApiResponse>(403);
+    .WithName("DeleteEvent")
+    .WithSummary("Delete an event")
+    .WithDescription("Deletes an event (Admin only)")
+    .RequireAuthorization("RequireAdminRole")
+    .Produces<ApiResponse>(200)
+    .Produces<ApiResponse>(404)
+    .Produces<ApiResponse>(403);
 
             // Image management endpoints
             events.MapPost("/{id:int}/images", UploadEventImageAsync)
@@ -199,11 +201,11 @@ namespace EventManagementSystem.API.Endpoints
             return Results.Ok(ApiResponse<List<EventDto>>.SuccessResponse(result.Value));
         }
 
-        // ✅ Updated CreateEventAsync to send notifications
+        // Updated CreateEventAsync to send notifications
         private static async Task<IResult> CreateEventAsync(
             [FromBody] CreateEventCommand command,
             ISender mediator,
-            INotificationService notificationService, // ✅ Inject notification service
+            INotificationService notificationService, // Inject notification service
             ILogger<Program> logger)
         {
             try
@@ -221,7 +223,7 @@ namespace EventManagementSystem.API.Endpoints
                     command.Country,
                     command.Capacity,
                     command.EventType,
-                    command.CategoryId
+                    command.CategoryId,
                 });
 
                 // Validate the basic requirements
@@ -271,7 +273,7 @@ namespace EventManagementSystem.API.Endpoints
 
                 logger.LogInformation("Event created successfully with ID: {EventId}", result.Value.Id);
 
-                // ✅ Send notification after successful creation
+                // Send notification after successful creation
                 try
                 {
                     await notificationService.SendEventCreatedNotificationAsync(
@@ -297,12 +299,12 @@ namespace EventManagementSystem.API.Endpoints
             }
         }
 
-        // ✅ Updated UpdateEventAsync to send notifications
+        // Updated UpdateEventAsync to send notifications
         private static async Task<IResult> UpdateEventAsync(
             int id,
             [FromBody] UpdateEventCommand command,
             ISender mediator,
-            INotificationService notificationService, // ✅ Inject notification service
+            INotificationService notificationService, // Inject notification service
             ILogger<Program> logger)
         {
             command.Id = id;
@@ -313,7 +315,7 @@ namespace EventManagementSystem.API.Endpoints
                 return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
             }
 
-            // ✅ Send notification after successful update
+            // Send notification after successful update
             try
             {
                 // Get the event title for notification (you might need to modify this based on your result structure)
@@ -328,40 +330,108 @@ namespace EventManagementSystem.API.Endpoints
             return Results.Ok(ApiResponse.SuccessResponse("Event updated successfully"));
         }
 
-        // ✅ Updated DeleteEventAsync to send notifications
+        // Updated DeleteEventAsync to send notifications
         private static async Task<IResult> DeleteEventAsync(
-            int id,
-            ISender mediator,
-            INotificationService notificationService, // ✅ Inject notification service
-            ILogger<Program> logger)
+    int id,
+    ISender mediator,
+    INotificationService notificationService,
+    IEventRepository eventRepository,
+    IEventRegistrationRepository registrationRepository,
+    ILogger<Program> logger)
         {
-            // Get event details before deletion for notification
-            var getQuery = new GetEventQuery(id);
-            var eventResult = await mediator.Send(getQuery);
-
-            var command = new DeleteEventCommand(id);
-            var result = await mediator.Send(command);
-
-            if (result.IsFailure)
+            try
             {
-                return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
-            }
+                // Pre-fetch all data BEFORE deletion
+                logger.LogInformation("Pre-fetching event data before deletion: {EventId}", id);
 
-            // ✅ Send cancellation notification after successful deletion
-            if (eventResult.IsSuccess)
-            {
+                var eventEntity = await eventRepository.GetByIdWithRegistrationsAsync(
+                    Domain.ValueObjects.EventId.Create(id),
+                    default);
+
+                if (eventEntity == null)
+                {
+                    logger.LogWarning("Event not found for deletion: {EventId}", id);
+                    return Results.NotFound(ApiResponse.ErrorResponse("Event not found"));
+                }
+
+                // Get all registered users BEFORE deletion
+                var registrations = await registrationRepository.GetActiveRegistrationsByEventAsync(
+                    Domain.ValueObjects.EventId.Create(id),
+                    default);
+
+                var eventTitle = eventEntity.Title;
+                var registeredUserIds = registrations.Select(r => r.UserId.Value).ToList();
+
+                logger.LogInformation(
+                    "Event '{EventTitle}' has {RegistrationCount} active registrations",
+                    eventTitle,
+                    registrations.Count);
+
+                // Now proceed with deletion
+                var command = new DeleteEventCommand(id);
+                var result = await mediator.Send(command);
+
+                if (result.IsFailure)
+                {
+                    logger.LogWarning("Failed to delete event {EventId}: {Errors}", id, string.Join(", ", result.GetErrorMessages()));
+                    return Results.BadRequest(ApiResponse.ErrorResponse(result.GetErrorMessages().ToList()));
+                }
+
+                logger.LogInformation("Successfully deleted event: {EventId}", id);
+
+                // Send notifications using pre-fetched data
                 try
                 {
-                    await notificationService.SendEventCancelledNotificationAsync(id, eventResult.Value.Title);
-                    logger.LogInformation("Event cancellation notification sent for: {EventTitle}", eventResult.Value.Title);
+                    await SendEventDeletionNotifications(
+                        notificationService,
+                        id,
+                        eventTitle,
+                        registeredUserIds,
+                        logger);
                 }
                 catch (Exception notificationEx)
                 {
-                    logger.LogError(notificationEx, "Failed to send event cancellation notification for: {EventTitle}", eventResult.Value.Title);
+                    // Don't fail the deletion if notification fails
+                    logger.LogError(notificationEx, "Failed to send event deletion notifications for: {EventTitle}", eventTitle);
                 }
+
+                return Results.Ok(ApiResponse.SuccessResponse("Event deleted successfully"));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unexpected error deleting event: {EventId}", id);
+                return Results.Problem("An unexpected error occurred while deleting the event");
+            }
+        }
+
+        // Helper method for sending deletion notifications
+        private static async Task SendEventDeletionNotifications(
+            INotificationService notificationService,
+            int eventId,
+            string eventTitle,
+            List<int> registeredUserIds,
+            ILogger logger)
+        {
+            logger.LogInformation(
+                "Sending deletion notifications for event '{EventTitle}' to {UserCount} users",
+                eventTitle,
+                registeredUserIds.Count);
+
+            // Cast to enhanced service to access advanced methods
+            if (notificationService is EnhancedNotificationService enhancedService)
+            {
+                await enhancedService.SendEventDeletionNotificationsWithData(
+                    eventId,
+                    eventTitle,
+                    registeredUserIds);
+            }
+            else
+            {
+                // Fallback for basic notification service
+                await notificationService.SendEventCancelledNotificationAsync(eventId, eventTitle);
             }
 
-            return Results.Ok(ApiResponse.SuccessResponse("Event deleted successfully"));
+            logger.LogInformation("Event deletion notifications sent successfully for: {EventTitle}", eventTitle);
         }
 
         private static async Task<IResult> UpdateEventCapacityAsync(
