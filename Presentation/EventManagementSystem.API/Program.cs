@@ -9,7 +9,10 @@ using EventManagementSystem.Application.Common.Interfaces;
 using EventManagementSystem.Identity;
 using EventManagementSystem.Persistence;
 using EventManagementSystem.Utils;
+using Microsoft.AspNetCore.Http.Json;
 using Serilog;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 internal class Program
 {
@@ -31,13 +34,19 @@ internal class Program
                 .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
+        builder.Services.Configure<JsonOptions>(options =>
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        });
+
         try
         {
             Log.Information("Starting Event Management System API");
 
             // Add layers in proper dependency order
             // Add core layers first
-            builder.Services.AddApplication();                    // Application layer (interfaces + basic implementations)
+            builder.Services.AddApplication(); // Application layer (interfaces + basic implementations)
             builder.Services.AddPersistence(builder.Configuration); // Data access layer
             builder.Services.AddIdentityServices(builder.Configuration); // Identity layer
 
