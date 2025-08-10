@@ -7,19 +7,16 @@ namespace EventManagementSystem.Persistence
     using Azure.Storage.Blobs;
     using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Domain.Repositories;
-    using EventManagementSystem.Identity.Context;
-    using EventManagementSystem.Identity.Entities;
+    using EventManagementSystem.Persistence.Configurations;
     using EventManagementSystem.Persistence.Context;
     using EventManagementSystem.Persistence.Interceptors;
     using EventManagementSystem.Persistence.Repositories;
     using EventManagementSystem.Persistence.Services;
     using EventManagementSystem.Persistence.UoW;
-    using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
-    using EventManagementSystem.Persistence.Configurations;
     using Microsoft.Extensions.Options;
 
     public static class DependencyInjection

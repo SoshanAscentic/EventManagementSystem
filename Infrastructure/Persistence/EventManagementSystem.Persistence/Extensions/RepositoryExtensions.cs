@@ -235,11 +235,12 @@ namespace EventManagementSystem.Persistence.Extensions
                     .Where(e => e.CreatedAt >= last30Days)
                     .OrderByDescending(e => e.CreatedAt)
                     .Take(5)
-                    .Select(e => new {
+                    .Select(e => new
+                    {
                         e.Id,
                         e.Title,
                         StartDateTime = EF.Property<DateTime>(e, "_startDateTime"),
-                        CategoryName = e.Category!.Name
+                        CategoryName = e.Category!.Name,
                     })
                     .ToListAsync(cancellationToken),
             };

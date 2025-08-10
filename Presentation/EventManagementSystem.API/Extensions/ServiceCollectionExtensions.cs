@@ -23,17 +23,17 @@ namespace EventManagementSystem.API.Extensions
                 options.AddPolicy("Development", policy =>
                 {
                     policy.WithOrigins(
-                              "http://localhost:5173",   // ✅ Vite default port
-                              "https://localhost:5173",  // ✅ HTTPS version
-                              "http://localhost:5174",   // ✅ Alternative port
-                              "https://localhost:5174",  // ✅ HTTPS alternative
-                              "http://localhost:3000",   // ✅ React/Next.js default
-                              "https://localhost:3000"   // ✅ HTTPS React/Next.js
-                          )
+                              "http://localhost:5173",   // Vite default port
+                              "https://localhost:5173",  // HTTPS version
+                              "http://localhost:5174",   // Alternative port
+                              "https://localhost:5174",  // HTTPS alternative
+                              "http://localhost:3000",   // React/Next.js default
+                              "https://localhost:3000") // HTTPS React/Next.js
+
                           .AllowAnyMethod()
                           .AllowAnyHeader()
-                          .AllowCredentials()  // ✅ Allow credentials for auth
-                          .SetIsOriginAllowedToAllowWildcardSubdomains(); // ✅ Allow subdomains
+                          .AllowCredentials() // Allow credentials for auth
+                          .SetIsOriginAllowedToAllowWildcardSubdomains(); // Allow subdomains
                 });
 
                 options.AddPolicy("Production", policy =>
@@ -90,7 +90,7 @@ namespace EventManagementSystem.API.Extensions
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.ApiKey,
                     Scheme = "Bearer",
-                    BearerFormat = "JWT"
+                    BearerFormat = "JWT",
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement

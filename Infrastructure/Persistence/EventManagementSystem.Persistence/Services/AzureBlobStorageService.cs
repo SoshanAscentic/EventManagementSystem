@@ -7,9 +7,8 @@ namespace EventManagementSystem.Persistence.Services
     using Azure.Storage.Blobs;
     using Azure.Storage.Blobs.Models;
     using EventManagementSystem.Application.Common.Interfaces;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
     using EventManagementSystem.Persistence.Configurations;
+    using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
 
     public class AzureBlobStorageService : IFileStorageService

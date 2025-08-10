@@ -79,8 +79,7 @@ namespace EventManagementSystem.API.Endpoints
             }
 
             // Don't set HTTP-only cookies - just return the tokens in response
-            // SetAuthenticationCookies(context, result.Value); // Remove this line
-
+            // SetAuthenticationCookies(context, result.Value);
             return Results.Ok(ApiResponse<AuthenticationResponse>.SuccessResponse(
                 result.Value,
                 "Login successful"));
@@ -101,7 +100,6 @@ namespace EventManagementSystem.API.Endpoints
 
             // Don't set HTTP-only cookies - just return the tokens in response
             // SetAuthenticationCookies(context, result.Value); // Remove this line
-
             return Results.Created("/api/auth/me", ApiResponse<AuthenticationResponse>.SuccessResponse(
                 result.Value,
                 "Registration successful"));
@@ -113,8 +111,8 @@ namespace EventManagementSystem.API.Endpoints
             HttpContext context)
         {
             // Try to get refresh token from request body first, then from cookie as fallback
-            var refreshToken = !string.IsNullOrEmpty(request.RefreshToken) 
-                ? request.RefreshToken 
+            var refreshToken = !string.IsNullOrEmpty(request.RefreshToken)
+                ? request.RefreshToken
                 : context.Request.Cookies["RefreshToken"];
 
             if (string.IsNullOrEmpty(refreshToken))
@@ -132,7 +130,6 @@ namespace EventManagementSystem.API.Endpoints
 
             // Don't set new HTTP-only cookies - just return the new tokens
             // SetAuthenticationCookies(context, result.Value); // Remove this line
-
             return Results.Ok(ApiResponse<AuthenticationResponse>.SuccessResponse(
                 result.Value,
                 "Token refreshed successfully"));
@@ -156,7 +153,6 @@ namespace EventManagementSystem.API.Endpoints
 
             // Don't clear cookies since we're not using them
             // ClearAuthenticationCookies(context); // Remove this line
-
             return Results.Ok(ApiResponse.SuccessResponse("Logout successful"));
         }
 
@@ -206,7 +202,7 @@ namespace EventManagementSystem.API.Endpoints
         private static void SetAuthenticationCookies(HttpContext context, AuthenticationResponse authResponse)
         {
             var isDevelopment = context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment();
-            
+
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -214,7 +210,7 @@ namespace EventManagementSystem.API.Endpoints
                 SameSite = SameSiteMode.Lax, // Try Lax instead of Strict for development
                 Expires = authResponse.ExpiresAt,
                 Path = "/", // Explicitly set path
-                Domain = isDevelopment ? null : "yourdomain.com" // Set domain for production
+                Domain = isDevelopment ? null : "yourdomain.com", // Set domain for production
             };
 
             var refreshCookieOptions = new CookieOptions
@@ -224,11 +220,10 @@ namespace EventManagementSystem.API.Endpoints
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(7),
                 Path = "/",
-                Domain = isDevelopment ? null : "yourdomain.com"
+                Domain = isDevelopment ? null : "yourdomain.com",
             };
 
             context.Response.Cookies.Append("AccessToken", authResponse.AccessToken, cookieOptions);
-            
             if (!string.IsNullOrEmpty(authResponse.RefreshToken))
             {
                 context.Response.Cookies.Append("RefreshToken", authResponse.RefreshToken, refreshCookieOptions);

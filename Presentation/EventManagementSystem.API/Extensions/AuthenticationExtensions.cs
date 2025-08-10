@@ -47,6 +47,7 @@ namespace EventManagementSystem.API.Extensions
                     {
                         context.Token = authHeader.Substring("Bearer ".Length).Trim();
                     }
+
                     // If no header token, try to get from cookie (for web clients)
                     else if (string.IsNullOrEmpty(context.Token))
                     {
@@ -70,6 +71,7 @@ namespace EventManagementSystem.API.Extensions
                     {
                         logger.LogWarning("JWT Authentication failed for path {Path}: {Exception}", path, context.Exception.Message);
                     }
+
                     return Task.CompletedTask;
                 };
 
@@ -89,6 +91,7 @@ namespace EventManagementSystem.API.Extensions
                     {
                         logger.LogInformation("JWT Token validated for user: {UserId}", userId);
                     }
+
                     return Task.CompletedTask;
                 };
             });

@@ -34,7 +34,7 @@ namespace EventManagementSystem.Domain.ValueObjects
             return new UserId(value);
         }
 
-        public static UserId CreateNew() => new(0);
+        public static UserId CreateNew() => new (0);
 
         public override string ToString() => this.Value.ToString();
 

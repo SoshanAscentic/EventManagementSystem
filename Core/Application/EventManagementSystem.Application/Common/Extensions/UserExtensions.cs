@@ -4,7 +4,6 @@
 
 namespace EventManagementSystem.Application.Common.Extensions
 {
-    using System;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Domain.Entities;
 

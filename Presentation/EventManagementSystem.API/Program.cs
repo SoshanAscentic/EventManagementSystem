@@ -1,6 +1,8 @@
 // <copyright file="Program.cs" company="Ascentic">
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using DotNetEnv;
 using EventManagementSystem.API.Endpoints;
 using EventManagementSystem.API.Extensions;
@@ -11,8 +13,6 @@ using EventManagementSystem.Persistence;
 using EventManagementSystem.Utils;
 using Microsoft.AspNetCore.Http.Json;
 using Serilog;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 internal class Program
 {

@@ -1,8 +1,12 @@
+// <copyright file="TestEndpoints.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
+
 namespace EventManagementSystem.API.Endpoints
 {
+    using EventManagementSystem.Application.Common.Enums;
     using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Application.DTOs;
-    using EventManagementSystem.Application.Common.Enums;
 
     public static class TestEndpoints
     {
@@ -19,11 +23,11 @@ namespace EventManagementSystem.API.Endpoints
                     Title = "Test Notification",
                     Message = "This is a test notification from the API",
                     Type = NotificationType.EventCreated,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
                 };
 
                 await signalRService.SendToAllAsync(testNotification);
-                
+
                 return Results.Ok("Test notification sent to all users");
             })
             .WithName("SendTestNotification")
@@ -39,15 +43,15 @@ namespace EventManagementSystem.API.Endpoints
                     Message = $"This is a personal test notification for user {userId}",
                     Type = NotificationType.RegistrationConfirmed,
                     UserId = userId,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
                 };
 
                 await signalRService.SendToUserAsync(userId, testNotification);
-                
+
                 return Results.Ok($"Test notification sent to user {userId}");
             })
             .WithName("SendTestNotificationToUser")
             .WithOpenApi();
         }
     }
-} 
+}

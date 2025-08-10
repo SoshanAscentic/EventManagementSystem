@@ -37,8 +37,11 @@ namespace EventManagementSystem.Application.EventHandlers
 
             try
             {
-                var eventEntity = await eventRepository.GetByIdAsync(domainEvent.EventEntityId, cancellationToken);
-                if (eventEntity == null) return;
+                var eventEntity = await this.eventRepository.GetByIdAsync(domainEvent.EventEntityId, cancellationToken);
+                if (eventEntity == null)
+                {
+                    return;
+                }
 
                 var notification = new NotificationDto
                 {

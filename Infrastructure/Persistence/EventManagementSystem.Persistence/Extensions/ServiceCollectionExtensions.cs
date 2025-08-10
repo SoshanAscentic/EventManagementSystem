@@ -10,15 +10,6 @@ namespace EventManagementSystem.Persistence.Extensions
 
     public static class ServiceCollectionExtensions
     {
-        //public static IServiceCollection AddHealthChecks(this IServiceCollection services, string connectionString)
-        //{
-        //    services.AddHealthChecks()
-        //        .AddSqlServer(connectionString, tags: new[] { "database" })
-        //        .AddAzureBlobStorage(connectionString, tags: new[] { "blob-storage" });
-
-        //    return services;
-        //}
-
         public static async Task<IHost> MigrateAndSeedDatabaseAsync(this IHost host)
         {
             using var scope = host.Services.CreateScope();

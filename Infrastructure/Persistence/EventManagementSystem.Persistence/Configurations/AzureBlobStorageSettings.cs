@@ -11,4 +11,4 @@ public class AzureBlobStorageSettings
     public string BlobContainerName { get; set; } = string.Empty;
 
     public string BlobBaseUrl { get; set; } = string.Empty;
-} 
+}

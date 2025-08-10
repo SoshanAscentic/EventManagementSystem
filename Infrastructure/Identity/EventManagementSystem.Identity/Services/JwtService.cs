@@ -28,22 +28,22 @@ namespace EventManagementSystem.Identity.Services
         public string GenerateAccessToken(ApplicationUser user, IList<string> roles)
         {
             var jwtSettings = this.configuration.GetSection("JwtSettings");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"] !));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new List<Claim>
             {
-                new(ClaimTypes.NameIdentifier, user.Id.ToString()), // This is the key claim for user ID
-                new("sub", user.Id.ToString()), // Alternative claim name
-                new("id", user.Id.ToString()), // Another alternative for compatibility
-                new(ClaimTypes.Name, user.UserName!),
-                new(ClaimTypes.Email, user.Email!),
-                new(ClaimTypes.GivenName, user.FirstName),
-                new(ClaimTypes.Surname, user.LastName),
-                new("FullName", user.FullName),
-                new("IsEmailConfirmed", user.EmailConfirmed.ToString()),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                new (ClaimTypes.NameIdentifier, user.Id.ToString()), // This is the key claim for user ID
+                new ("sub", user.Id.ToString()), // Alternative claim name
+                new ("id", user.Id.ToString()), // Another alternative for compatibility
+                new (ClaimTypes.Name, user.UserName!),
+                new (ClaimTypes.Email, user.Email!),
+                new (ClaimTypes.GivenName, user.FirstName),
+                new (ClaimTypes.Surname, user.LastName),
+                new ("FullName", user.FullName),
+                new ("IsEmailConfirmed", user.EmailConfirmed.ToString()),
+                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new (JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
             };
 
             // Add role claims
@@ -80,7 +80,7 @@ namespace EventManagementSystem.Identity.Services
         public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
         {
             var jwtSettings = this.configuration.GetSection("JwtSettings");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"] !));
 
             var tokenValidationParameters = new TokenValidationParameters
             {

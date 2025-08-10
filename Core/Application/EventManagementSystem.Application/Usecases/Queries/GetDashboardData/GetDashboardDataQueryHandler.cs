@@ -1,16 +1,21 @@
-﻿namespace EventManagementSystem.Application.Usecases.Queries.GetDashboardData;
+﻿// <copyright file="GetDashboardDataQueryHandler.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
 
-using EventManagementSystem.Application.Common.Interfaces;
-using EventManagementSystem.Application.Common.Models;
-using MediatR;
-
-public class GetDashboardDataQueryHandler : IRequestHandler<GetDashboardDataQuery, Result<Dictionary<string, object>>>
+namespace EventManagementSystem.Application.Usecases.Queries.GetDashboardData
 {
-    private readonly IStatisticsService? statisticsService;
+    using EventManagementSystem.Application.Common.Interfaces;
+    using EventManagementSystem.Application.Common.Models;
+    using MediatR;
 
-    public async Task<Result<Dictionary<string, object>>> Handle(GetDashboardDataQuery request, CancellationToken cancellationToken)
+    public class GetDashboardDataQueryHandler : IRequestHandler<GetDashboardDataQuery, Result<Dictionary<string, object>>>
     {
-        var data = await this.statisticsService.GetDashboardDataAsync(cancellationToken);
-        return Result<Dictionary<string, object>>.Success(data);
+        private readonly IStatisticsService? statisticsService;
+
+        public async Task<Result<Dictionary<string, object>>> Handle(GetDashboardDataQuery request, CancellationToken cancellationToken)
+        {
+            var data = await this.statisticsService.GetDashboardDataAsync(cancellationToken);
+            return Result<Dictionary<string, object>>.Success(data);
+        }
     }
 }

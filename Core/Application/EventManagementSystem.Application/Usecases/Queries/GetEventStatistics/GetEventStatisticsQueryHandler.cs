@@ -1,4 +1,8 @@
-﻿namespace EventManagementSystem.Application.Usecases.Queries.GetEventStatistics
+﻿// <copyright file="GetEventStatisticsQueryHandler.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
+
+namespace EventManagementSystem.Application.Usecases.Queries.GetEventStatistics
 {
     using EventManagementSystem.Application.Common.Constants;
     using EventManagementSystem.Application.Common.Interfaces;

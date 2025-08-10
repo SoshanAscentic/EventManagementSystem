@@ -23,7 +23,7 @@ namespace EventManagementSystem.Application.EventHandlers
 
         public async Task Handle(EventUpdatedEvent domainEvent, CancellationToken cancellationToken = default)
         {
-            logger.LogInformation(
+            this.logger.LogInformation(
                 "Handling EventUpdatedEvent for event {EventId}: {OldTitle} -> {NewTitle}",
                 domainEvent.EventEntityId.Value,
                 domainEvent.OldTitle,
@@ -32,14 +32,16 @@ namespace EventManagementSystem.Application.EventHandlers
             try
             {
                 // Use the new title for notification
-                await notificationService.SendEventUpdatedNotificationAsync(
+                await this.notificationService.SendEventUpdatedNotificationAsync(
                     domainEvent.EventEntityId.Value,
                     domainEvent.NewTitle,
                     cancellationToken);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to send event updated notification for event {EventId}",
+                this.logger.LogError(
+                    ex,
+                    "Failed to send event updated notification for event {EventId}",
                     domainEvent.EventEntityId.Value);
             }
         }

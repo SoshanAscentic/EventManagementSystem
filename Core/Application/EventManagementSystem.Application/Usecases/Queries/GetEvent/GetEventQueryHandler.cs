@@ -7,6 +7,7 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
     using AutoMapper;
     using EventManagementSystem.Application.Common.Constants;
     using EventManagementSystem.Application.Common.Extensions;
+    using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Application.Common.Models;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Application.Usecases.Queries.GetEvent;
@@ -14,7 +15,6 @@ namespace EventManagementSystem.Application.Usecases.Queries.GetEvents
     using EventManagementSystem.Domain.ValueObjects;
     using MediatR;
     using Microsoft.Extensions.Logging;
-    using EventManagementSystem.Application.Common.Interfaces;
 
     public class GetEventQueryHandler : IRequestHandler<GetEventQuery, Result<EventDto>>
     {

@@ -1,4 +1,4 @@
-﻿// <copyright file="DeleteImageCommand.cs" company="Ascentic">
+﻿// <copyright file="DeleteEventImageCommand.cs" company="Ascentic">
 // Copyright (c) Ascentic. All rights reserved.
 // </copyright>
 

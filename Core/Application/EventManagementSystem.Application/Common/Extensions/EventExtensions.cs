@@ -4,9 +4,9 @@
 
 namespace EventManagementSystem.Application.Common.Extensions
 {
+    using EventManagementSystem.Application.Common.Interfaces;
     using EventManagementSystem.Application.DTOs;
     using EventManagementSystem.Domain.Entities;
-    using EventManagementSystem.Application.Common.Interfaces;
 
     public static class EventExtensions
     {

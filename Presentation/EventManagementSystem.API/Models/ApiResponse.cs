@@ -10,7 +10,7 @@ namespace EventManagementSystem.API.Models
 
         public T? Data { get; set; }
 
-        public List<string> Errors { get; set; } = new();
+        public List<string> Errors { get; set; } = new ();
 
         public string? Message { get; set; }
 

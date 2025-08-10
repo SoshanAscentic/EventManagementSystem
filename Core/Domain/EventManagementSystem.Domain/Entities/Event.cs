@@ -13,6 +13,16 @@ namespace EventManagementSystem.Domain.Entities
         private readonly List<EventRegistration> registrations = new ();
         private readonly List<EventImage> images = new ();
 
+        // Backing fields for owned type properties
+        private DateTime _startDateTime;
+        private DateTime _endDateTime;
+        private string _venue;
+        private string _address;
+        private string? _city;
+        private string? _country;
+        private int _capacity;
+        private string _eventType;
+
         // Private constructor for EF Core
         private Event()
         {
@@ -27,16 +37,6 @@ namespace EventManagementSystem.Domain.Entities
             this._capacity = 1;
             this._eventType = "Conference";
         }
-
-        // Backing fields for owned type properties
-        private DateTime _startDateTime;
-        private DateTime _endDateTime;
-        private string _venue;
-        private string _address;
-        private string? _city;
-        private string? _country;
-        private int _capacity;
-        private string _eventType;
 
         // Properties that EF Core will map directly
         public string Title { get; private set; }

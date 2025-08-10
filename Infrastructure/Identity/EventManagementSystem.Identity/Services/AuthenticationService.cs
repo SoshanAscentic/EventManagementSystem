@@ -382,7 +382,6 @@ namespace EventManagementSystem.Identity.Services
                     FullName = user.FullName,
                     Roles = roles,
                     IsEmailConfirmed = user.EmailConfirmed,
-                    // Don't include AccessToken or RefreshToken for security
                 };
             }
             catch (Exception ex)

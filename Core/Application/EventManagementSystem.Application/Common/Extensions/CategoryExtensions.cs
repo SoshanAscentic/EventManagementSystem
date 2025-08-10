@@ -26,5 +26,4 @@ namespace EventManagementSystem.Application.Common.Extensions
             return entities.Select(e => e.ToDto()).ToList();
         }
     }
-
 }

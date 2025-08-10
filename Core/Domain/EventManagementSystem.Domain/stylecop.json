@@ -13,8 +13,7 @@
       "fileNamingConvention": "stylecop",
       "excludeFromPunctuationCheck": [],
       "headerDecoration": "",
-      "variables": {
-      },
+      "variables": {},
       "xmlHeader": true
     },
     "indentation": {

@@ -150,7 +150,6 @@ namespace EventManagementSystem.Persistence.Repositories
         }
 
         // ... (other methods remain similar - just replace Status.Value with EF.Property<string>(r, "_status") and similar for other value objects)
-
         public async Task<IReadOnlyList<EventRegistration>> GetRegistrationsByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
             return await this.dbSet
@@ -248,15 +247,19 @@ namespace EventManagementSystem.Persistence.Repositories
 
         public async Task<double> GetAttendanceRateForEventAsync(EventId eventId, CancellationToken cancellationToken = default)
         {
-            var totalRegistrations = await this.dbSet.CountAsync(r =>
+            var totalRegistrations = await this.dbSet.CountAsync(
+                r =>
                 EF.Property<int>(r, "_eventId") == eventId.Value &&
                 (EF.Property<string>(r, "_status") == "Attended" || EF.Property<string>(r, "_status") == "NoShow"),
                 cancellationToken);
 
             if (totalRegistrations == 0)
+            {
                 return 0;
+            }
 
-            var attendees = await this.dbSet.CountAsync(r =>
+            var attendees = await this.dbSet.CountAsync(
+                r =>
                 EF.Property<int>(r, "_eventId") == eventId.Value &&
                 EF.Property<string>(r, "_status") == "Attended",
                 cancellationToken);

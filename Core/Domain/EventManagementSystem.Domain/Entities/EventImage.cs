@@ -22,9 +22,13 @@ namespace EventManagementSystem.Domain.Entities
 
         // Properties that EF Core will map directly
         public string FileName { get; private set; }
+
         public string FilePath { get; private set; }
+
         public long FileSize { get; private set; }
+
         public bool IsPrimary { get; private set; }
+
         public DateTime UploadedAt { get; private set; }
 
         // Value object property with backing field

@@ -1,10 +1,14 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿// <copyright file="20250723061806_ForthMigration.cs" company="Ascentic">
+// Copyright (c) Ascentic. All rights reserved.
+// </copyright>
 
 #nullable disable
 
 namespace EventManagementSystem.Persistence.Migrations
 {
+    using System;
+    using Microsoft.EntityFrameworkCore.Migrations;
+
     /// <inheritdoc />
     public partial class ForthMigration : Migration
     {
