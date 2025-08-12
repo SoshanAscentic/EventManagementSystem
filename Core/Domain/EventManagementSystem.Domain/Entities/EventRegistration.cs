@@ -10,6 +10,11 @@ namespace EventManagementSystem.Domain.Entities
 
     public class EventRegistration : BaseEntity, IAggregateRoot
     {
+        // Backing fields for value objects
+        private int _eventId;
+        private int _userId;
+        private string _status;
+
         // Private Constructor for EF Core
         private EventRegistration()
         {
@@ -17,11 +22,6 @@ namespace EventManagementSystem.Domain.Entities
             this._userId = 0;
             this._status = "Registered";
         }
-
-        // Backing fields for value objects
-        private int _eventId;
-        private int _userId;
-        private string _status;
 
         // Properties that EF Core will map directly
         public DateTime RegisteredAt { get; private set; }

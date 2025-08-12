@@ -11,7 +11,11 @@ namespace EventManagementSystem.Domain.Entities
 
     public class User : BaseEntity, IAggregateRoot
     {
-        private readonly List<EventRegistration> registrations = new();
+        private readonly List<EventRegistration> registrations = new ();
+
+        // Backing fields for value objects
+        private string _email;
+        private string? _phone;
 
         // Private constructor for EF Core
         private User()
@@ -20,10 +24,6 @@ namespace EventManagementSystem.Domain.Entities
             this.FirstName = string.Empty;
             this.LastName = string.Empty;
         }
-
-        // Backing fields for value objects
-        private string _email;
-        private string? _phone;
 
         // Properties that EF Core will map directly
         public string FirstName { get; private set; }

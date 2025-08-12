@@ -9,6 +9,9 @@ namespace EventManagementSystem.Domain.Entities
 
     public class EventImage : BaseEntity
     {
+        // Backing field for value object
+        private int _eventId;
+
         // Private constructor for EF Core
         private EventImage()
         {
@@ -16,9 +19,6 @@ namespace EventManagementSystem.Domain.Entities
             this.FileName = string.Empty;
             this.FilePath = string.Empty;
         }
-
-        // Backing field for value object
-        private int _eventId;
 
         // Properties that EF Core will map directly
         public string FileName { get; private set; }
