@@ -1,156 +1,207 @@
-# Event Management System 🗓️
+# Event Management System
 
-A full-featured, **modular and cleanly-architected** ASP.NET Core solution for creating, managing and attending events.  
-It showcases modern .NET practices such as **DDD, CQRS/MediatR, clean architecture, SignalR, Azure Blob Storage** integration, role–based security with **JWT + cookies**, caching, validation and a rich test-suite.
+A full-featured, modular, and cleanly-architected ASP.NET Core solution for creating, managing, and attending events. It showcases modern .NET practices including Domain-Driven Design (DDD), CQRS with MediatR, Clean Architecture, SignalR, Azure Blob Storage integration, role-based security with JWT + cookies, caching, validation, and a rich test suite.
 
----
-
-## ✨ Features
-
-* Event / category CRUD with capacity management  
-* User registration, authentication & refresh-tokens (JWT stored in secure cookies or headers)  
-* Role-based authorization (`Admin` / `User`) with custom policies  
-* Upload, set primary & delete event images (stored in Azure Blob Storage)  
-* Real-time notifications via SignalR (and fall-back e-mail)  
-* Dashboard & statistics end-points (events nearing capacity, upcoming events, etc.)  
-* Caching layer to minimise DB round-trips  
-* Comprehensive domain events (e.g. `EventCapacityReachedEvent`) and handlers  
-* Integration, unit and SignalR tests
-
----
-
-## 🏗️ Solution Structure
-
-EventManagementSystem.sln
-|-- Core
-|-- Domain // Pure domain entities, VOs & domain events
--- Infrastructure
-|-- Persistence // EF Core, repositories, migrations, caching
-|-- Identity // ASP.NET Core Identity + JWT, auth services
-|-- Utils // Cross-cutting concerns (SignalR hubs, notifications)
--- Presentation
-|-- EventManagementSystem.API // Minimal-API endpoints & middleware
-
-The architecture follows **Clean Architecture** / **DDD** principles:  
-*Core* stays free of external concerns, *Infrastructure* provides implementations, *Presentation* wires everything together.
+Contents
+- Features
+- Solution Architecture
+- Tech Stack
+- Getting Started
+- Configuration
+- Database and Migrations
+- Run the API
+- Authentication and Authorization
+- Real-time Notifications (SignalR)
+- Testing
+- Docker / Containerization
+- Code Style and Quality
+- Contributing
 
 ---
 
-## 🔐 Authentication & Authorization
+## Features
 
-1. **JWT**s are issued by the Identity project (`IJwtService`) and stored in an `HttpOnly`, `SameSite=Strict` cookie named `AccessToken`.  
-2. `AuthenticationExtensions` configures ASP.NET to **read the token from either the cookie or the `Authorization: Bearer` header**, so Swagger / CLI tools also work.
-3. Two policies are registered:
-   * `RequireAdminRole` → Must have `Admin`
-   * `RequireUserRole`  → Must have `User` **or** `Admin`
-4. End-points enforce them with `.RequireAuthorization("RequireAdminRole")` in the `Endpoints/` files.
-
----
-
-## ⚙️ Getting Started
-
-### Prerequisites
-* .NET 8 SDK (or 7 – check your `*.csproj` `TargetFramework`)
-* A relational DB (SQL Server / PostgreSQL) – configurable via connection string
-* Azure Storage Account for images (or use Azurite emulator)
-* Node 18+ (only if you serve a SPA from the same solution)
-
-### Clone & Restore
-
-```bash
-git clone https://github.com/<your-org>/EventManagementSystem.git
-cd EventManagementSystem
-dotnet restore
-```
-
-### Environment variables
-
-Create a **local `.env` / `User Secrets`** or update `appsettings.Development.json`.
-
-```jsonc
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=EventDb;User Id=sa;Password=Your_password123;"
-  },
-  "JwtSettings": {
-    "Issuer": "EventMS",
-    "Audience": "EventMS",
-    "Secret":  "PLEASE_CHANGE_ME_TO_A_LONG_SECRET",
-    "ExpiresInMinutes": 15
-  },
-  "AzureBlobStorage": {
-    "ConnectionString": "UseDevelopmentStorage=true",
-    "Container": "event-images"
-  }
-}
-```
-
-### Database – run migrations & seed
-
-```bash
-dotnet ef database update --project Infrastructure/Persistence/EventManagementSystem.Persistence
-```
-
-(The `DatabaseSeeder` will populate default roles, admin user and sample data on first run.)
-
-### Run the API
-
-```bash
-dotnet run --project Presentation/EventManagementSystem.API
-# Swagger UI → https://localhost:5001/swagger
-```
+- Event and category CRUD with capacity management
+- User registration, authentication, refresh tokens (JWT stored in secure cookies or headers)
+- Role-based authorization (Admin/User) with custom policies
+- Event images: upload, set primary, delete (Azure Blob Storage)
+- Real-time notifications via SignalR (email fallback)
+- Dashboard/statistics endpoints (e.g., events nearing capacity)
+- Caching layer to minimize DB round-trips
+- Domain events and handlers (e.g., EventCapacityReachedEvent)
+- Unit, integration, and SignalR tests
 
 ---
 
-## 🧪 Testing
+## Solution Architecture
 
-```bash
-dotnet test
-```
+Clean Architecture with strict separation of concerns:
 
-SignalR integration tests reside in `Tests/SignalRIntegrationTests.cs`.
+- Core
+  - Domain: Pure domain entities, value objects, and domain events
+  - Application: Use cases (CQRS/MediatR), validators, behaviors, interfaces, models
+- Infrastructure
+  - Persistence: EF Core, repositories, Unit of Work, migrations, caching
+  - Identity: ASP.NET Core Identity, JWT issuance, auth services
+  - Utils: Cross-cutting concerns (SignalR hubs, background services, notifications)
+- Presentation
+  - EventManagementSystem.API: Minimal APIs, middleware, DI composition, Swagger, static files (SignalR test page)
+
+Example structure (abridged):
+- Core
+  - Domain
+    - Entities: Event, EventRegistration, EventImage, EventCategory, User
+    - Events: EventCreatedEvent, EventCapacityUpdatedEvent, EventCapacityReachedEvent, RegistrationCancelledEvent, System events
+  - Application
+    - Usecases/Commands/...
+    - Common/Behaviors: ValidationBehavior, PerformanceBehavior
+    - Common/Interfaces: INotificationService, ISignalRNotificationService
+    - Common/Models: Result, Error
+    - EventHandlers: for domain events
+- Infrastructure
+  - Persistence
+    - Context: ApplicationDbContext
+    - Repositories: BaseRepository, EventRepository, EventRegistrationRepository
+    - UoW: UnitOfWork
+  - Identity
+    - Entities: ApplicationUser, ApplicationRole, RefreshToken
+    - Services: AuthenticationService, IJwtService
+    - Configuration: JwtSettings
+    - Context: IdentityDbContext (+ DesignTime factory)
+  - Utils
+    - Services: NotificationHub (SignalR), SignalRNotificationService, EnhancedNotificationService, NotificationBackgroundService
+- Presentation
+  - API
+    - Endpoints: AuthenticationEndpoints, AdminEndpoints, etc.
+    - Extensions: AuthenticationExtensions, SignalRExtensions, ServiceCollectionExtensions, ApplicationExtensions
+    - Middleware: SecurityHeadersMiddleware, RequestLoggingMiddleware, GlobalExceptionMiddleware
+    - Models: ApiResponse, PaginationParameters, RefreshTokenRequest
+    - wwwroot/signalr-test.html
 
 ---
 
-## 🚀 CI / CD & Deployment
+## Tech Stack
 
-The solution is container-ready. A sample Dockerfile (multistage build) and `docker-compose.yml` can be added:
-
-```dockerfile
-# --- Build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY . .
-RUN dotnet publish Presentation/EventManagementSystem.API -c Release -o /app/publish
-
-# --- Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
-WORKDIR /app
-COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "EventManagementSystem.API.dll"]
-```
-
-Environment vars (connection strings, JWT secret, blob storage) are injected via your orchestration platform (Kubernetes, Azure App Service, etc.).
+- .NET 9 (ASP.NET Core Minimal APIs)
+- EF Core
+- MediatR (CQRS, pipeline behaviors)
+- ASP.NET Core Identity + JWT
+- SignalR
+- Azure Blob Storage (or Azurite for local dev)
+- xUnit (tests), FluentValidation
+- StyleCop + .editorconfig
 
 ---
 
-## 📈 Roadmap / Ideas
+## Getting Started
 
-* Outlook / Google Calendar integration  
-* Web-hooks for external systems  
-* Admin UI (React or Next.js)  
-* Payment gateway for paid events  
-* Kubernetes Helm chart & GitHub Actions pipeline  
+Prerequisites
+- .NET 9 SDK
+- A relational DB (SQL Server or PostgreSQL)
+- Azure Storage Account or Azurite (for images)
+- Node 18+ (only if you plan a SPA front-end)
+- Visual Studio 2022 (latest) or VS Code
+
+Clone and Restore
+- If you already have the code locally, skip cloning.
+- From the solution root:
+  - dotnet restore
+
+Trust HTTPS Dev Certificate
+- dotnet dev-certs https --trust
+
+Visual Studio notes
+- Open the solution in Visual Studio 2022
+- Set the API project as startup (__Set as Startup Project__)
+- Run with __Start Debugging__ (F5). You can choose the debug target (__Debug Target__) between __IIS Express__ and __Project__.
 
 ---
 
-## 🤝 Contributing
+## Configuration
 
-1. Fork the repo & create your feature branch (`git checkout -b feature/amazing-thing`)
-2. Commit your changes (`git commit -m 'feat: add amazing thing'`)
-3. Push to the branch (`git push origin feature/amazing-thing`)
-4. Open a Pull Request
+Use appsettings.Development.json and/or User Secrets for local settings.
 
-Please make sure to run `dotnet format` and that all tests pass before submitting.
+Required settings (sample):
 
-Happy hacking! 🎉
+{ "ConnectionStrings": { "DefaultConnection": "Server=localhost;Database=EventDb;User Id=sa;Password=Your_password123;" }, "JwtSettings": { "Issuer": "EventMS", "Audience": "EventMS", "Secret": "PLEASE_CHANGE_ME_TO_A_LONG_SECRET", "ExpiresInMinutes": 15 }, "AzureBlobStorage": { "ConnectionString": "UseDevelopmentStorage=true", "Container": "event-images" } }
+
+
+Tips
+- Use __Manage User Secrets__ in Visual Studio for secrets.
+- For Azurite, set ConnectionString = "UseDevelopmentStorage=true".
+- Ensure strong JWT Secret in production and store via your platform’s secret manager.
+
+---
+
+## Database and Migrations
+
+Apply migrations for both Persistence (ApplicationDbContext) and Identity (IdentityDbContext).
+
+CLI (from solution root):
+- Application database
+  - dotnet ef database update --project Infrastructure/Persistence/EventManagementSystem.Persistence
+- Identity database
+  - dotnet ef database update --project Infrastructure/Identity/EventManagementSystem.Identity
+
+Add new migrations (examples):
+- dotnet ef migrations add Init_App --project Infrastructure/Persistence/EventManagementSystem.Persistence
+- dotnet ef migrations add Init_Identity --project Infrastructure/Identity/EventManagementSystem.Identity
+
+On first run, the seeder creates default roles, an admin user, and sample data.
+
+---
+
+## Run the API
+
+CLI
+- dotnet run --project Presentation/EventManagementSystem.API
+
+Swagger
+- Swagger UI is enabled in Development. Check the console output for the actual port (commonly https://localhost:5001/swagger).
+
+Static assets
+- A SignalR test page is available at /signalr-test.html (served from wwwroot).
+
+---
+
+## Authentication and Authorization
+
+- JWTs issued by Identity (IJwtService).
+- Token is read from either:
+  - HttpOnly, SameSite=Strict cookie named AccessToken, or
+  - Authorization: Bearer <token> header (useful for Swagger/CLI).
+- Policies:
+  - RequireAdminRole → Admin role required
+  - RequireUserRole → User or Admin
+- Endpoints enforce policies via Minimal API configuration in the Endpoints folder.
+
+Security notes
+- Always use HTTPS.
+- Rotate JWT secrets; use short-lived access tokens with refresh tokens.
+
+---
+
+## Real-time Notifications (SignalR)
+
+- NotificationHub exposes real-time events (e.g., capacity updates).
+- SignalRNotificationService broadcasts domain events to clients.
+- A fallback EnhancedNotificationService/BackgroundService can send alternative notifications.
+- Try the test page: https://localhost:<port>/signalr-test.html
+
+---
+
+## Testing
+
+Run all tests:
+- dotnet test
+
+Notes
+- Validation and behavior tests live under Application.
+- SignalR integration tests are in Tests/SignalRIntegrationTests.cs.
+- Consider running with a test DB and isolated storage.
+
+---
+
+## Docker / Containerization
+
+Sample Dockerfile (multi-stage) targeting .NET 9:
