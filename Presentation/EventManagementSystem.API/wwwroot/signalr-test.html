@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Test</title>
+    <script src="https://unpkg.com/@microsoft/signalr@latest/dist/browser/signalr.js"></script>
+</head>
+<body>
+    <div id="messagesList"></div>
+    <input type="text" id="userToken" placeholder="JWT Token" />
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    
+    <script>
+        let connection = null;
+        
+        async function connect() {
+            const token = document.getElementById("userToken").value;
+            
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/notificationHub", {
+                    accessTokenFactory: () => token
+                })
+                .build();
+
+            connection.on("ReceiveNotification", function (notification) {
+                const li = document.createElement("li");
+                li.textContent = `${notification.title}: ${notification.message}`;
+                document.getElementById("messagesList").appendChild(li);
+                console.log("Received notification:", notification);
+            });
+
+            try {
+                await connection.start();
+                console.log("SignalR Connected.");
+                
+                // Test joining a group
+                await connection.invoke("JoinEventGroup", 1);
+                console.log("Joined Event_1 group");
+                
+            } catch (err) {
+                console.error("Connection failed: ", err);
+            }
+        }
+        
+        async function disconnect() {
+            if (connection) {
+                await connection.stop();
+                console.log("SignalR Disconnected.");
+            }
+        }
+    </script>
+</body>
+</html> 

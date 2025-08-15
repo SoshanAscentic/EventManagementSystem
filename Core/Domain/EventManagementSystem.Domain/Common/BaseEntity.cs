@@ -7,7 +7,7 @@ namespace EventManagementSystem.Domain.Common
     using System;
     using System.Collections.Generic;
 
-    internal class BaseEntity : IAggregateRoot
+    public class BaseEntity : IAggregateRoot
     {
         private readonly List<IDomainEvent> domainEvents = new ();
 

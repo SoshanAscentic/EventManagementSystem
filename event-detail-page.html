@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details</title>
+    <style>
+        .event-registration {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        #registration-button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 160px;
+        }
+
+        /* Default state - Ready to register */
+        #registration-button {
+            background-color: #007bff;
+            color: white;
+        }
+
+        #registration-button:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        /* Registered state */
+        #registration-button.registered {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #registration-button.registered:hover {
+            background-color: #dc3545;
+        }
+
+        #registration-button.registered:hover::after {
+            content: " - Click to Cancel";
+        }
+
+        /* Loading state */
+        #registration-button.loading {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Event full state */
+        #registration-button.full {
+            background-color: #ffc107;
+            color: #212529;
+            cursor: not-allowed;
+        }
+
+        /* Registration closed state */
+        #registration-button.closed {
+            background-color: #6c757d;
+            color: white;
+            cursor: not-allowed;
+        }
+
+        /* Disabled state */
+        #registration-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #registration-status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .event-info {
+            margin-bottom: 20px;
+        }
+
+        .event-capacity {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Event Details</h1>
+        
+        <!-- Event information would be populated here -->
+        <div class="event-info" data-event-id="123">
+            <h2 id="event-title">Loading...</h2>
+            <p id="event-description">Loading event details...</p>
+            <div id="event-details">
+                <p><strong>Date:</strong> <span id="event-date">-</span></p>
+                <p><strong>Venue:</strong> <span id="event-venue">-</span></p>
+                <p><strong>Location:</strong> <span id="event-location">-</span></p>
+            </div>
+            
+            <div class="event-capacity">
+                <p><strong>Capacity:</strong> <span id="event-capacity">-</span></p>
+                <p><strong>Current Registrations:</strong> <span id="current-registrations">-</span></p>
+                <p><strong>Available Spots:</strong> <span id="remaining-capacity">-</span></p>
+            </div>
+        </div>
+
+        <!-- Registration section -->
+        <div class="event-registration">
+            <h3>Event Registration</h3>
+            <button id="registration-button">Loading...</button>
+            <div id="registration-status"></div>
+        </div>
+    </div>
+
+    <script src="event-registration-component.js"></script>
+    <script>
+        // Extended registration manager for this specific page
+        class EventDetailPageManager extends EventRegistrationManager {
+            constructor(eventId) {
+                super(eventId);
+            }
+
+            async init() {
+                await super.init();
+                this.populateEventDetails();
+            }
+
+            // Populate the event details in the UI
+            populateEventDetails() {
+                if (!this.eventData) return;
+
+                document.getElementById('event-title').textContent = this.eventData.title;
+                document.getElementById('event-description').textContent = this.eventData.description;
+                document.getElementById('event-date').textContent = 
+                    new Date(this.eventData.startDateTime).toLocaleString();
+                document.getElementById('event-venue').textContent = this.eventData.venue;
+                document.getElementById('event-location').textContent = 
+                    `${this.eventData.address}${this.eventData.city ? ', ' + this.eventData.city : ''}${this.eventData.country ? ', ' + this.eventData.country : ''}`;
+                document.getElementById('event-capacity').textContent = this.eventData.capacity;
+                document.getElementById('current-registrations').textContent = this.eventData.currentRegistrations;
+                document.getElementById('remaining-capacity').textContent = this.eventData.remainingCapacity;
+            }
+
+            // Override to refresh event details after registration changes
+            async registerForEvent(notes = '') {
+                await super.registerForEvent(notes);
+                this.populateEventDetails();
+            }
+
+            async cancelRegistration() {
+                await super.cancelRegistration();
+                this.populateEventDetails();
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            const eventId = getEventIdFromPage();
+            
+            if (eventId) {
+                const pageManager = new EventDetailPageManager(eventId);
+                pageManager.setupEventListeners();
+                await pageManager.init();
+                
+                // Make manager globally available for debugging
+                window.registrationManager = pageManager;
+            } else {
+                console.error('No event ID found');
+                document.getElementById('registration-button').textContent = 'Event not found';
+                document.getElementById('registration-button').disabled = true;
+            }
+        });
+    </script>
+</body>
+</html> 
